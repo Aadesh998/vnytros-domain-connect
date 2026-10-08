@@ -25,9 +25,9 @@ no root `package.json` or shared workspace.
 | Folder | What it is | Stack | Deploys to | License |
 | --- | --- | --- | --- | --- |
 | [`server/`](server) | REST API (`/v1`), OAuth server, MCP server, mail platform (mailforge) and background worker | Go, PostgreSQL, RabbitMQ | your own Linux server ([`server/deploy/`](server/deploy/README.md)) | AGPL-3.0-only |
-| [`dashboard/`](dashboard) | Web dashboard: accounts, API keys, domains, Vnytros Mail | Vite, React, TypeScript | any static host | AGPL-3.0-only |
+| [`dashboard/`](dashboard) | Web dashboard: accounts, API keys, domains, Vnytros Mail | Vite, React, TypeScript | Cloudflare Workers (or any static host) | AGPL-3.0-only |
 | [`website/`](website) | Single-page project site, [vnytros.dev](https://vnytros.dev) | Next.js, OpenNext | Cloudflare Workers | AGPL-3.0-only |
-| [`docs/`](docs) | Documentation site, [docs.vnytros.dev](https://docs.vnytros.dev) | Fumadocs, Next.js | any Next.js host | AGPL-3.0-only |
+| [`docs/`](docs) | Documentation site, [docs.vnytros.dev](https://docs.vnytros.dev) | Fumadocs, Next.js | Cloudflare Workers via OpenNext (or any Next.js host) | AGPL-3.0-only |
 | [`sdk/`](sdk) | `@vnytros/sdk` 0.2.0, the JavaScript/TypeScript SDK | TypeScript, zero runtime deps | installed into your app ([without npm](#using-the-sdk-without-npm)) | MIT |
 
 Repository-wide files: [`CONTRIBUTING.md`](CONTRIBUTING.md),
@@ -87,9 +87,9 @@ particular hosting account.
 | Part | How it deploys |
 | --- | --- |
 | `server/` | Follow [`server/deploy/README.md`](server/deploy/README.md), running its `make` targets from `server/`. Infrastructure (RabbitMQ, OpenTelemetry collector, Tempo, Prometheus, Grafana) runs under Docker Compose (`server/deploy/docker-compose.infra.yaml`); the three Go binaries are built **on the server** from a clone of this repository (`~/app/vnytros/server`) and run behind nginx with Let's Encrypt. PostgreSQL is yours to provide. The optional GitHub Actions deploy is [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): manual (`workflow_dispatch`) and driven entirely by the `DEPLOY_SSH_*` secrets you add to your fork. |
-| `dashboard/` | Any static host. Root / working directory `dashboard`, install `npm ci`, build `npm run build` with `VITE_API_BASE_URL` set to your API, output directory `dist`, and an SPA fallback that rewrites unknown paths to `/index.html`. |
+| `dashboard/` | Cloudflare Workers (static assets with SPA fallback) via the Cloudflare Vite plugin (`wrangler.jsonc`, Worker `vnytros-dashboard`). In Cloudflare Workers Builds set the **root directory to `dashboard`**, the build variable `VITE_API_BASE_URL` to your API, build `npm run build`, deploy `npx wrangler deploy`; from a checkout, `npm run deploy`. Any static host also works: output directory `dist`, rewrite unknown paths to `/index.html`. |
 | `website/` | Cloudflare Workers via [OpenNext](https://opennext.js.org/cloudflare), from `website/` (`wrangler.jsonc`, `open-next.config.ts`). In Cloudflare Workers Builds set the **root directory to `website`**; the build is `npm run build` (OpenNext) and the deploy `npx wrangler deploy`. From a checkout, `npm run deploy` in `website/` does both with your own Cloudflare login. Any Next.js host also works with `npm run build:next`. |
-| `docs/` | Any Node.js host that runs Next.js (`npm run build`, then `npm start`), or a platform such as Vercel or Cloudflare with the **root directory set to `docs`**. No environment variables. |
+| `docs/` | Cloudflare Workers via OpenNext (`wrangler.jsonc`, `open-next.config.ts`, Worker `vnytros-docs`). In Cloudflare Workers Builds set the **root directory to `docs`**, build `npx opennextjs-cloudflare build`, deploy `npx wrangler deploy`; from a checkout, `npm run deploy`. Any Node.js host also works (`npm run build`, then `npm start`). No environment variables. |
 | `sdk/` | Not deployed: apps install it. See below. |
 
 Each folder's README has the details.

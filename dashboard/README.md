@@ -74,6 +74,21 @@ except `.env.example` is git-ignored.
 
 ## Deploying
 
+platform.vnytros.dev runs on Cloudflare Workers as static assets with an SPA
+fallback, built with the Cloudflare Vite plugin (`wrangler.jsonc`, Worker
+`vnytros-dashboard`).
+
+| Cloudflare Workers Builds setting | Value |
+| --- | --- |
+| Root directory | `dashboard` |
+| Build variable | `VITE_API_BASE_URL` = your API URL |
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+
+From a checkout with your own Cloudflare login: `npm run deploy`.
+
+To use any other static host instead:
+
 ```sh
 VITE_API_BASE_URL=https://api.your-domain.com npm run build
 ```

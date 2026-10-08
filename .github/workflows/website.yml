@@ -30,6 +30,4 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm run lint
-      # Plain Next.js build: needs no Cloudflare account or credentials. The
-      # Workers (OpenNext) build and deploy happen in Cloudflare Workers Builds.
       - run: npm run build:next

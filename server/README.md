@@ -56,7 +56,7 @@ synchronously. Each binary exposes Prometheus metrics on loopback
 (9101 / 9102 / 9103) and can export traces over OTLP.
 
 ```
-cmd/            entry points (server, mcp, worker, migration)
+cmd/            entry points (server, mcp, worker, migration, apikey)
 internal/
   server/       router for /v1, /oauth, /.well-known; mounts mailforge at /api
   handler/ service/ repository/ models/ views/   the /v1 API
@@ -123,6 +123,19 @@ make run-mcp      # MCP server on :5000
 The values in `.env.example` match the credentials in `docker-compose.yaml`,
 so the database and broker work without further changes. No accounts are
 created for you: sign up through `POST /v1/auth/signup` or your dashboard.
+
+To get an API key without the dashboard (`cmd/apikey`):
+
+```bash
+make apikey EMAIL=you@example.com               # existing account
+make apikey EMAIL=you@example.com ARGS=-create  # creates a verified account first
+```
+
+The key is stored in the database like a dashboard-created key and also
+written to `keys/vnytros-api-key.env` (mode 600, gitignored). Load it with
+`set -a; source keys/vnytros-api-key.env; set +a`. Other flags: `-webhook`
+(URL that receives the key's domain events), `-name`, `-out` (`""` to skip
+the file).
 
 Build and test:
 

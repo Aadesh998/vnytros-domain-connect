@@ -36,11 +36,21 @@ No environment variables are needed.
 
 ## Deploying
 
-`npm run build` produces a standard Next.js app (`npm start` serves it). Deploy
-it to any Node.js host that runs Next.js, or to a platform such as Vercel or
-Cloudflare, with the project's **root directory set to `docs`**, install
-command `npm ci` and build command `npm run build`. No environment variables
-are needed.
+docs.vnytros.dev runs on Cloudflare Workers through
+[OpenNext](https://opennext.js.org/cloudflare) (`wrangler.jsonc`,
+`open-next.config.ts`, Worker `vnytros-docs`, R2 cache bucket
+`vnytros-docs-opennext-cache`).
+
+| Cloudflare Workers Builds setting | Value |
+| --- | --- |
+| Root directory | `docs` |
+| Build command | `npx opennextjs-cloudflare build` |
+| Deploy command | `npx wrangler deploy` |
+
+From a checkout with your own Cloudflare login, `npm run deploy` does both;
+`npm run preview` runs the Worker locally. No environment variables are needed.
+
+Any Node.js host works too: `npm run build`, then `npm start`.
 
 ## Other parts of the monorepo
 

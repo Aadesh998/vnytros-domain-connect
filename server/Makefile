@@ -33,7 +33,7 @@ endif
 endif
 endif
 
-.PHONY: all build build-mcp build-worker build-all release run run-mcp run-worker test tidy migration clean keys \
+.PHONY: all build build-mcp build-worker build-all release run run-mcp run-worker test tidy migration clean keys apikey \
         ssh status logs restart infra rollback sync-deploy sync-scripts upload-keys known-hosts sync-env nginx-install certs
 
 all: build-all
@@ -87,6 +87,11 @@ clean:
 keys:
 	@echo "generating an RSA keypair into keys/"
 	./scripts/genrsa.sh
+
+# API key without the dashboard: make apikey EMAIL=you@example.com [ARGS=-create]
+apikey:
+	@test -n "$(EMAIL)" || { echo "usage: make apikey EMAIL=you@example.com [ARGS=-create]"; exit 2; }
+	go run ./cmd/apikey -email "$(EMAIL)" $(ARGS)
 
 # remote operations
 ssh:
