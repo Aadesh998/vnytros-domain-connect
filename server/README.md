@@ -13,8 +13,9 @@ it yourself, on your own domain, with your own database, SMTP account and
 credentials. Nothing in the code points at any project-operated server; every
 URL comes from your configuration and defaults to `localhost`.
 
-There are no plans, tiers or paywalls. Project website: <https://vnytros.dev>;
-documentation: <https://docs.vnytros.dev>.
+There are no plans, tiers or paywalls. Project home:
+<https://github.com/vnytros/vnytros>; documentation:
+[`docs/content/docs/`](../docs/content/docs).
 
 ## What it does
 
@@ -76,7 +77,7 @@ template is served at `/.well-known/domainconnect/<DC_PROVIDER_DOMAIN>/custom-do
 from `./templates/<DC_PROVIDER_DOMAIN>.custom-domain.json`; with it unset the
 route is not registered.
 
-The project's own template, [`templates/vnytros.dev.custom-domain.json`](templates/vnytros.dev.custom-domain.json)
+The project's own template, [`vnytros.dev.custom-domain.json`](https://github.com/Domain-Connect/Templates/blob/master/vnytros.dev.custom-domain.json)
 (providerId `vnytros.dev`, serviceId `custom-domain`), is accepted upstream in
 the official [Domain-Connect/Templates](https://github.com/Domain-Connect/Templates)
 repository: [PR #1064](https://github.com/Domain-Connect/Templates/pull/1064)

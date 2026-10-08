@@ -234,7 +234,7 @@ export function AppLayout() {
           <div className="mb-4 hidden justify-end lg:flex">
             <Button variant="outline" size="sm" asChild>
               <a
-                href="https://docs.vnytros.dev/docs"
+                href="https://github.com/vnytros/vnytros/tree/main/docs/content/docs"
                 target="_blank"
                 rel="noreferrer"
               >

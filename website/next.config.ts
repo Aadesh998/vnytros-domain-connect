@@ -141,17 +141,14 @@ const nextConfig: NextConfig = {
   /*
    * Security headers.
    *
-   * HSTS: `includeSubDomains` assumes every vnytros.dev subdomain speaks
-   * HTTPS.
+   * HSTS: `includeSubDomains` assumes every subdomain of the origin you
+   * deploy this site to speaks HTTPS. If that is not true for your domain,
+   * drop `includeSubDomains` (and `preload`) before deploying.
    *
-   * `preload` was previously omitted here on the grounds that it is
-   * impractical to undo. That is true of the *preload list*, but not of this
-   * directive: the token is inert until vnytros.dev is actually submitted at
-   * hstspreload.org, and browsers ignore it otherwise. So the header now
-   * advertises readiness — which is what the audit checks for — while the
-   * irreversible step stays a deliberate, separate action. Do not submit until
-   * you are certain every future subdomain will speak HTTPS, because removal
-   * from the list takes months and bricks any plain-HTTP host in the meantime.
+   * `preload` is inert until the domain is submitted at hstspreload.org;
+   * browsers ignore it otherwise. Do not submit unless you are certain every
+   * future subdomain will speak HTTPS, because removal from the list takes
+   * months and bricks any plain-HTTP host in the meantime.
    */
   async headers() {
     return [
@@ -236,32 +233,12 @@ const nextConfig: NextConfig = {
     ];
   },
   /*
-   * www → apex.
-   *
-   * Two rules, not one, and the split is not stylistic. A single `/:path*`
-   * rule matches the bare root with `path` empty, and Next then emits the
-   * destination with the placeholder uninterpolated — `www.vnytros.dev/`
-   * redirected to `https://vnytros.dev/:path*`, a 404, which is precisely the
-   * URL someone typing the domain by hand arrives at. Deep links substituted
-   * correctly, so it failed only on the page most likely to be visited.
-   *
-   * `/:path+` requires at least one segment, leaving the root to the explicit
-   * rule above it.
+   * Paths the old site served all redirect permanently to the single page.
+   * No host-specific (www → apex) redirect is configured: set one up at your
+   * own host or proxy if you need it.
    */
   async redirects() {
     return [
-      {
-        source: "/",
-        has: [{ type: "host", value: "www.vnytros.dev" }],
-        destination: "https://vnytros.dev/",
-        permanent: true,
-      },
-      {
-        source: "/:path+",
-        has: [{ type: "host", value: "www.vnytros.dev" }],
-        destination: "https://vnytros.dev/:path+",
-        permanent: true,
-      },
       ...RETIRED_PATHS.map((source) => ({
         source,
         destination: "/",

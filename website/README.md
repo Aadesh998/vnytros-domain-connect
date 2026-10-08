@@ -1,8 +1,10 @@
 # Vnytros website
 
-The project page at [vnytros.dev](https://vnytros.dev) for **Vnytros**, an
+The project landing page for **Vnytros**, an
 open-source DNS and email-authentication toolkit with a built-in mail
-platform. You self-host it. There is no hosted service.
+platform. You self-host it. There is no hosted service, and the project runs
+no public copy of this page: its home is the
+[GitHub repository](https://github.com/vnytros/vnytros).
 
 This site is deliberately small: a static Next.js app with a single page, no
 accounts, no forms and no API calls. It is the `website/` folder of the
@@ -62,18 +64,19 @@ copy. Any Node.js Next.js host also works with `npm run build:next` and
 
 ## Environment variables
 
-One optional variable, inlined at build time (see `.env.example`):
+Optional variables, inlined at build time (see `.env.example`):
 
-| Variable | Purpose |
-| --- | --- |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics 4 ID. Empty loads no analytics script. |
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | Origin you serve the site from: `metadataBase`, canonical URL, Open Graph URL, sitemap, robots and JSON-LD. Set it to your own origin before building. |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | (empty) | Google Analytics 4 ID. Empty loads no analytics script. |
 
 ## Other parts of the monorepo
 
 - [`server/`](../server): Go REST API, MCP server, worker and Vnytros Mail
 - [`dashboard/`](../dashboard): web dashboard
 - [`sdk/`](../sdk): `@vnytros/sdk` (MIT)
-- [`docs/`](../docs): documentation at [docs.vnytros.dev](https://docs.vnytros.dev)
+- [`docs/`](../docs): documentation site (pages in [`docs/content/docs/`](../docs/content/docs))
 
 ## Contributing & licence
 

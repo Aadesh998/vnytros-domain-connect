@@ -1,6 +1,6 @@
 # Vnytros Dashboard
 
-The web dashboard for [Vnytros](https://vnytros.dev), a free, open-source
+The web dashboard for [Vnytros](https://github.com/vnytros/vnytros), a free, open-source
 community project for connecting domains and sending email you can trust.
 
 Vnytros is **self-hosted**: the project runs no public API, dashboard, or
@@ -29,7 +29,7 @@ Tailwind CSS v4 and React Router. It talks to the Vnytros API
 ## Self-hosting setup
 
 Requirements: Node.js 20 or newer, npm, and a running Vnytros API (see the
-[self-hosting guide](https://docs.vnytros.dev/docs/self-hosting)).
+[self-hosting guide](../docs/content/docs/self-hosting.mdx)).
 
 ```sh
 git clone https://github.com/vnytros/vnytros
@@ -74,8 +74,8 @@ except `.env.example` is git-ignored.
 
 ## Deploying
 
-platform.vnytros.dev runs on Cloudflare Workers as static assets with an SPA
-fallback, built with the Cloudflare Vite plugin (`wrangler.jsonc`, Worker
+The dashboard can be deployed to Cloudflare Workers as static assets with an
+SPA fallback, built with the Cloudflare Vite plugin (`wrangler.jsonc`, Worker
 `vnytros-dashboard`).
 
 | Cloudflare Workers Builds setting | Value |

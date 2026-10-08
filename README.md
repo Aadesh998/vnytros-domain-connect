@@ -12,8 +12,9 @@ tracking).
 with your own database, SMTP account and credentials. There are no plans,
 tiers or paywalls.
 
-- Website: <https://vnytros.dev>
-- Documentation: <https://docs.vnytros.dev>
+- Source: <https://github.com/vnytros/vnytros>
+- Documentation: [`docs/content/docs/`](docs/content/docs) (the source of the
+  docs site; run it locally with `cd docs && npm run dev`)
 
 **Contents:**
 [How it works](#how-it-works) ·
@@ -80,8 +81,8 @@ no root `package.json` or shared workspace.
 | --- | --- | --- | --- | --- |
 | [`server/`](server) | REST API (`/v1`), OAuth server, MCP server, mail platform (mailforge) and background worker | Go, PostgreSQL, RabbitMQ | your own Linux server ([`server/deploy/`](server/deploy/README.md)) | AGPL-3.0-only |
 | [`dashboard/`](dashboard) | Web dashboard: accounts, API keys, domains, Vnytros Mail | Vite, React, TypeScript | Cloudflare Workers (or any static host) | AGPL-3.0-only |
-| [`website/`](website) | Single-page project site, [vnytros.dev](https://vnytros.dev) | Next.js, OpenNext | Cloudflare Workers | AGPL-3.0-only |
-| [`docs/`](docs) | Documentation site, [docs.vnytros.dev](https://docs.vnytros.dev) | Fumadocs, Next.js | Cloudflare Workers via OpenNext (or any Next.js host) | AGPL-3.0-only |
+| [`website/`](website) | Single-page project landing page (self-hostable) | Next.js, OpenNext | Cloudflare Workers | AGPL-3.0-only |
+| [`docs/`](docs) | Documentation site ([content](docs/content/docs)) | Fumadocs, Next.js | Cloudflare Workers via OpenNext (or any Next.js host) | AGPL-3.0-only |
 | [`sdk/`](sdk) | `@vnytros/sdk` 0.2.0, the JavaScript/TypeScript SDK | TypeScript, zero runtime deps | installed into your app ([without npm](#using-the-sdk-without-npm)) | MIT |
 
 The server has five commands under `server/cmd/`:
@@ -249,8 +250,8 @@ curl $VNYTROS_BASE_URL/
 **Which DNS provider hosts a domain:**
 
 ```bash
-curl "$VNYTROS_BASE_URL/v1/detect?domain=vnytros.dev"
-# {"domain":"vnytros.dev","nameservers":["ben.ns.cloudflare.com",...],"provider":{"name":"Cloudflare",...}}
+curl "$VNYTROS_BASE_URL/v1/detect?domain=example.com"
+# {"domain":"example.com","nameservers":[...],"provider":{"name":"...",...}}
 ```
 
 **Are the expected records live?** (`ip`, `target` and `txt` are all optional)
@@ -258,8 +259,8 @@ curl "$VNYTROS_BASE_URL/v1/detect?domain=vnytros.dev"
 ```bash
 curl -X POST $VNYTROS_BASE_URL/v1/status \
   -H "Content-Type: application/json" \
-  -d '{"domain":"vnytros.dev","ip":"1.2.3.4"}'
-# {"domain":"vnytros.dev","is_configured":false,"records":[{"type":"A","expected":"1.2.3.4","current":[...],"status":false}]}
+  -d '{"domain":"example.com","ip":"1.2.3.4"}'
+# {"domain":"example.com","is_configured":false,"records":[{"type":"A","expected":"1.2.3.4","current":[...],"status":false}]}
 ```
 
 **Diagnostic tools.** Each returns a verdict, a grade and findings:
@@ -490,8 +491,8 @@ repository:
 - [PR #1166](https://github.com/Domain-Connect/Templates/pull/1166): more
   records, merged 2026-05-31
 
-A copy lives at
-[`server/templates/vnytros.dev.custom-domain.json`](server/templates/vnytros.dev.custom-domain.json).
+The accepted file is
+[`vnytros.dev.custom-domain.json`](https://github.com/Domain-Connect/Templates/blob/master/vnytros.dev.custom-domain.json) in that repository.
 That template belongs to the `vnytros.dev` providerId; if you self-host on
 your own domain, write and submit your own template (see
 [`server/README.md`](server/README.md#domain-connect)).

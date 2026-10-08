@@ -1,6 +1,6 @@
 # @vnytros/sdk
 
-Official JavaScript/TypeScript SDK for the [Vnytros](https://vnytros.dev) API.
+Official JavaScript/TypeScript SDK for the [Vnytros](https://github.com/vnytros/vnytros) API.
 Vnytros is a free, open-source project: let your users point their own domain at
 your service, check what their DNS looks like, and watch the records go live.
 

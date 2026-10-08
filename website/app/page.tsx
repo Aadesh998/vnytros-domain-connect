@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { DOCS_ENTRY, REPO_URL, REPOS, repoTree } from "@/lib/config";
+import { DOCS_ENTRY, REPO_URL, REPOS, repoBlob, repoTree } from "@/lib/config";
 
 const FEATURES = [
   {
@@ -167,9 +167,9 @@ export default function Home() {
             with <code className="font-mono text-[14px]">VITE_API_BASE_URL</code>{" "}
             set to your API. To deploy to a real server with nginx and TLS,
             follow <span className="font-mono text-[14px]">server/deploy/README.md</span>{" "}
-            in the repository. The full guide is on{" "}
-            <a href={DOCS_ENTRY} className={link}>
-              docs.vnytros.dev
+            in the repository. The full guide is{" "}
+            <a href={repoBlob("docs/content/docs/self-hosting.mdx")} className={link}>
+              docs/content/docs/self-hosting.mdx
             </a>
             .
           </p>

@@ -1,6 +1,6 @@
 # Vnytros Docs
 
-Source for [docs.vnytros.dev](https://docs.vnytros.dev) — the reference for the
+Source for the Vnytros documentation site — the reference for the
 Vnytros API (provider detection, direct DNS connect, verification, network
 tools, webhooks, OAuth/MCP). Built with [Fumadocs](https://fumadocs.dev) on
 Next.js. This is the `docs/` folder of the
@@ -18,11 +18,23 @@ Requires Node.js 20+.
 
 ```bash
 npm install      # also generates .source/ via fumadocs-mdx
-npm run dev      # http://localhost:3000/docs
-npm run build    # production build
+npm run dev -- -p 3001   # http://localhost:3001/docs
+npm run build            # production build
 ```
 
-No environment variables are needed.
+The pages can also be read directly on GitHub under
+[`content/docs/`](https://github.com/vnytros/vnytros/tree/main/docs/content/docs).
+
+## Environment variables
+
+All optional; see [`.env.example`](.env.example). Copy it to `.env.local` for
+`next dev`. `NEXT_PUBLIC_*` values are inlined at build time, so set them
+before `npm run build` and rebuild after changing them.
+
+| Variable | Default | Used for |
+| --- | --- | --- |
+| `NEXT_PUBLIC_DOCS_URL` | `http://localhost:3001` | Origin this docs site is served from: `metadataBase`, canonical URLs, sitemap, robots, JSON-LD |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | Origin of the project landing page (`website/`), referenced from JSON-LD |
 
 ## Layout
 
@@ -36,7 +48,7 @@ No environment variables are needed.
 
 ## Deploying
 
-docs.vnytros.dev runs on Cloudflare Workers through
+The docs can be deployed to Cloudflare Workers through
 [OpenNext](https://opennext.js.org/cloudflare) (`wrangler.jsonc`,
 `open-next.config.ts`, Worker `vnytros-docs`, R2 cache bucket
 `vnytros-docs-opennext-cache`).
@@ -48,7 +60,8 @@ docs.vnytros.dev runs on Cloudflare Workers through
 | Deploy command | `npx wrangler deploy` |
 
 From a checkout with your own Cloudflare login, `npm run deploy` does both;
-`npm run preview` runs the Worker locally. No environment variables are needed.
+`npm run preview` runs the Worker locally. Set `NEXT_PUBLIC_DOCS_URL` (and
+`NEXT_PUBLIC_SITE_URL`) to your own origins in the build environment.
 
 Any Node.js host works too: `npm run build`, then `npm start`.
 
@@ -61,7 +74,7 @@ Any Node.js host works too: `npm run build`, then `npm start`.
 
 Self-hosting instructions for the whole stack are in
 [`content/docs/self-hosting.mdx`](content/docs/self-hosting.mdx)
-(published at docs.vnytros.dev/docs/self-hosting).
+(served at `/docs/self-hosting` when you run this site).
 
 ## Contributing
 

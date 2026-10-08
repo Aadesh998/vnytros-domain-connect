@@ -4,7 +4,7 @@ This file is **not published**. Fumadocs only builds `content/docs/`
 (see `source.config.ts`), so this stays internal.
 
 It exists because "document the API" and "document the system" are two
-different jobs, and only the first one belongs on docs.vnytros.dev.
+different jobs, and only the first one belongs in the public docs.
 
 ## The rule
 
@@ -15,14 +15,13 @@ self-hosted Vnytros API**. The project runs no public instance (no hosted API,
 MCP server, mail, or accounts), so:
 
 - Every example uses the placeholder base URL `https://api.example.com`
-  (MCP: `https://mcp.example.com/mcp`). Never use a vnytros.dev host in an
-  example. The intro and quickstart say once to substitute your own URL.
+  (MCP: `https://mcp.example.com/mcp`). Never use a real project-owned host
+  in an example. The intro and quickstart say once to substitute your own URL.
 - Accounts and API keys come from "your deployment's dashboard" or the API —
-  never "sign up at vnytros.dev" or a vnytros.dev dashboard link.
+  never a "sign up" link or a link to a hosted dashboard.
 - No "free hosted tools", "public API", or "use our API" claims. The project
-  website is only `vnytros.dev/`; every other
-  vnytros.dev path (tools, guides, blog, MCP, providers, support, …) is gone,
-  so never link to one. Point to a docs page or GitHub instead.
+  runs no website or hosted service; its home is the GitHub repository
+  (https://github.com/vnytros/vnytros). Point to a docs page or GitHub instead.
 - The quickstart starts with [Self-hosting](content/docs/self-hosting.mdx).
 
 They need to know what to send, what comes back, what can go wrong, and

@@ -10,8 +10,8 @@ tests on its own; there is no shared workspace or root `package.json`.
 | --- | --- | --- | --- |
 | [`server/`](server) | Go API, OAuth, MCP server, mail platform, worker | Go (version in `server/go.mod`) | AGPL-3.0-only |
 | [`dashboard/`](dashboard) | Vite + React dashboard | Node.js 20+ | AGPL-3.0-only |
-| [`website/`](website) | Next.js project site (vnytros.dev) | Node.js 20+ | AGPL-3.0-only |
-| [`docs/`](docs) | Fumadocs docs site (docs.vnytros.dev) | Node.js 20+ | AGPL-3.0-only |
+| [`website/`](website) | Next.js project landing page | Node.js 20+ | AGPL-3.0-only |
+| [`docs/`](docs) | Fumadocs docs site | Node.js 20+ | AGPL-3.0-only |
 | [`sdk/`](sdk) | `@vnytros/sdk` JavaScript SDK | Node.js 18+ | MIT |
 
 ## Workflow

@@ -12,12 +12,12 @@ const organization = {
   "@type": "Organization",
   "@id": ORG_ID,
   name: "Vnytros",
-  alternateName: ["vnytros", "vnytros.dev"],
+  alternateName: ["vnytros"],
   url: SITE_URL,
   logo: `${SITE_URL}/logo-512.png`,
   description:
     "Open-source, self-hosted DNS and email-authentication toolkit with a built-in mail platform.",
-  sameAs: [GITHUB_ORG_URL],
+  sameAs: [GITHUB_ORG_URL, REPO_URL],
 };
 
 const serverSourceCode = {

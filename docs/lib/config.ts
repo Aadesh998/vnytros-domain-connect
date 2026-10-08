@@ -2,11 +2,22 @@
  * Absolute origin for this docs site.
  *
  * Next needs this to turn the relative canonical/OG paths in `generateMetadata`
- * into absolute URLs. Without a `metadataBase` those resolve against
- * `localhost` at build time, which is why the deployed pages carried no usable
- * canonical at all.
+ * into absolute URLs. Set NEXT_PUBLIC_DOCS_URL to the origin you deploy the
+ * docs to (it is inlined at build time). The default matches the local dev
+ * server (`npm run dev -- -p 3001`).
  */
-export const DOCS_URL = "https://docs.vnytros.dev";
+export const DOCS_URL = (
+  process.env.NEXT_PUBLIC_DOCS_URL || "http://localhost:3001"
+).replace(/\/+$/, "");
 
-/** The marketing site. Docs link back to it; keep the two in sync. */
-export const SITE_URL = "https://vnytros.dev";
+/**
+ * The project landing page (website/). Used only for structured-data ids.
+ * Set NEXT_PUBLIC_SITE_URL to where you deploy it; defaults to its local dev
+ * server.
+ */
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+).replace(/\/+$/, "");
+
+/** The project's home: the GitHub monorepo. */
+export const REPO_URL = "https://github.com/vnytros/vnytros";

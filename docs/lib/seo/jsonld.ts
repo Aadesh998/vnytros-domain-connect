@@ -5,13 +5,13 @@ import { DOCS_URL, SITE_URL } from "@/lib/config";
  *
  * The docs shipped with no JSON-LD at all, which left the two properties
  * looking like unrelated hosts to anything reading structured data: the
- * marketing site declared an Organization, and docs.vnytros.dev declared
+ * marketing site declared an Organization, and the docs host declared
  * nothing.
  *
  * The fix is not to redeclare the company here. `ORG_ID` is the *same* `@id`
  * the marketing site publishes, so both origins describe one entity and the
- * docs nodes reference it rather than competing with it. vnytros.dev stays
- * canonical for the Organization's own fields (name, logo, description); this
+ * docs nodes reference it rather than competing with it. The landing page
+ * (SITE_URL) stays canonical for the Organization's own fields (name, logo, description); this
  * file only points at them.
  *
  * Deliberately no `TechArticle`/`Article`: those need real `datePublished` /
