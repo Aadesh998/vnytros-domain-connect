@@ -1,0 +1,574 @@
+# Provisioned alert rules.
+#
+# These fire into Grafana's DEFAULT notification policy, which by default only
+# records them in the UI (Alerting -> Alert rules). To actually be told, add a
+# contact point (email/Slack/PagerDuty) under Alerting -> Contact points and
+# point the default policy at it. Left unconfigured here because the right
+# destination is yours to choose, and a wrong one fails silently.
+#
+# Thresholds are starting points, not truth. Tune them once you have a week of
+# real traffic; an alert that cries wolf gets muted, which is worse than none.
+# noDataState is set per rule, not globally. For counters whose absence means
+# nothing bad has happened (no 5xx, no dead-lettered jobs, no queues yet) it is
+# OK — otherwise a healthy idle system pages you. For up{} and host metrics it
+# stays NoData, because a target disappearing means we have gone blind.
+apiVersion: 1
+groups:
+- orgId: 1
+  name: vnytros
+  folder: Vnytros
+  interval: 1m
+  rules:
+  - uid: vny-api-down
+    title: API is down
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: up{job="vnytros-server"}
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 1
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: NoData
+    execErrState: Error
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "cmd/server is not being scraped on :9101 \u2014 the unit is down or crash-looping. Check:\
+        \ journalctl -u vnytros-server -n 50"
+  - uid: vny-mcp-down
+    title: MCP is down
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: up{job="vnytros-mcp"}
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 1
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: NoData
+    execErrState: Error
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: 'cmd/mcp is not being scraped on :9102. Check: journalctl -u vnytros-mcp -n 50'
+  - uid: vny-worker-down
+    title: Worker is down
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: up{job="vnytros-worker"}
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 1
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: NoData
+    execErrState: Error
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "cmd/worker is not being scraped on :9103. Nothing is draining the queues while this is\
+        \ firing \u2014 campaigns, webhooks and domain verification all stall. It hard-fails without the\
+        \ broker, so check RabbitMQ too."
+  - uid: vny-5xx
+    title: Elevated 5xx rate
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: sum(rate(vnytros_http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(vnytros_http_requests_total[5m])),
+          0.001)
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0.05
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: OK
+    execErrState: Error
+    for: 10m
+    labels:
+      severity: critical
+    annotations:
+      summary: More than 5% of requests are returning 5xx. Break down by route on the API dashboard, then
+        find the matching trace in Tempo.
+  - uid: vny-latency
+    title: API p95 latency high
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: histogram_quantile(0.95, sum by (le) (rate(vnytros_http_request_duration_seconds_bucket{job="vnytros-server"}[5m])))
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 2
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: OK
+    execErrState: Error
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "p95 above 2s for 15 minutes. Usually the database or an external call (DNS provider, SMTP)\
+        \ \u2014 those are untraced today, so check the DB span durations."
+  - uid: vny-queue-backlog
+    title: Queue backlog growing
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: sum(rabbitmq_detailed_queue_messages_ready)
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 5000
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: OK
+    execErrState: Error
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: More than 5000 messages waiting. Either the worker is down/slow or a campaign is larger
+        than throughput. Check jobs/sec by outcome on the Worker dashboard.
+  - uid: vny-dlq
+    title: Jobs being dead-lettered
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: sum(increase(vnytros_jobs_total{outcome="dlq"}[15m]))
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: OK
+    execErrState: Error
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Jobs are failing permanently and being dropped \u2014 each one will never run. Check the\
+        \ worker log for 'permanent failure (DLQ)'."
+  - uid: vny-panic
+    title: Worker panics
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: sum(increase(vnytros_jobs_total{outcome="panic"}[15m]))
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: OK
+    execErrState: Error
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: A job handler panicked. Always a bug; the message went to the DLQ. Check the worker log
+        for 'PANIC'.
+  - uid: vny-requeue
+    title: High requeue churn
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: sum(rate(vnytros_jobs_total{outcome="requeue"}[10m]))
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0.5
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: OK
+    execErrState: Error
+    for: 20m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Jobs are failing and being requeued repeatedly \u2014 the worker is burning CPU retrying\
+        \ something broken downstream (SMTP, DB, a webhook target)."
+  - uid: vny-mem
+    title: Host memory nearly exhausted
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: 1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0.92
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: NoData
+    execErrState: Error
+    for: 10m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Over 92% memory used. On a 4GB t3.medium the observability stack plus three binaries is\
+        \ a tight fit \u2014 the OOM killer will pick something."
+  - uid: vny-disk
+    title: Disk nearly full
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: 1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0.9
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: NoData
+    execErrState: Error
+    for: 10m
+    labels:
+      severity: critical
+    annotations:
+      summary: Over 90% of / used. Prometheus (15d retention) and Tempo (7d) both write here; shorten
+        retention or grow the volume.
+  - uid: vny-broker-down
+    title: RabbitMQ is down
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: up{job="rabbitmq"}
+        instant: true
+        datasource:
+          type: prometheus
+          uid: prometheus
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        refId: C
+        type: threshold
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 1
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+    noDataState: NoData
+    execErrState: Error
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: The broker is unreachable. cmd/worker exits without it (systemd will restart-loop), and
+        campaign sends cannot be published.

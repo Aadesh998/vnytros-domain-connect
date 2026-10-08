@@ -1,0 +1,50 @@
+---
+title: Pagination
+description: List endpoints use cursor-based pagination with a stable page size.
+---
+
+List endpoints — [API keys](/docs/api-keys) and [webhook events](/docs/webhooks) —
+return a cursor-paginated envelope:
+
+```json
+{
+  "items": [ /* ... */ ],
+  "next_cursor": 42,
+  "limit": 20,
+  "has_more": true
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `items` | array | The page of results |
+| `next_cursor` | integer | Pass as `cursor` to fetch the next page |
+| `limit` | integer | Page size actually applied |
+| `has_more` | boolean | Whether more results exist |
+
+## Query parameters
+
+| Param | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `cursor` | integer | — | ID of the last item from the previous page |
+| `limit` | integer | `20` | Page size, capped at `100` |
+
+## Looping through pages
+
+```ts
+let cursor: number | undefined;
+const all = [];
+
+do {
+  const qs = new URLSearchParams({ limit: "50" });
+  if (cursor) qs.set("cursor", String(cursor));
+
+  const res = await fetch(`${API}/v1/get/apis?${qs}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const page = await res.json();
+
+  all.push(...page.items);
+  cursor = page.has_more ? page.next_cursor : undefined;
+} while (cursor);
+```

@@ -1,0 +1,6 @@
+{
+  "header": "t=1755500000,v1=43803c27cb22556fcb63678b541bad7285f1694ccdf035d81e0906bd46183552",
+  "payload": "{\"event\":\"domain.connected\",\"data\":{\"domain\":\"shop.acme.com\",\"user_id\":42},\"timestamp\":\"2026-08-18T12:00:00Z\"}",
+  "secret": "whsec_test_2f8a1c4e6b90d3175ace2846bd09f713",
+  "timestamp": 1755500000
+}

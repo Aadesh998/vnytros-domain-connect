@@ -1,0 +1,105 @@
+---
+title: "DMARC Policy"
+description: "Parse a domain's DMARC policy with organisational-domain inheritance, and verify external report destinations are authorised."
+---
+
+```
+GET /v1/tools/email/dmarc
+```
+
+Parse a domain's DMARC policy and verify its report destinations. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `dmarc`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Domain to check |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/email/dmarc?domain=example.com"
+
+# Subdomains resolve through the organisational domain
+curl "https://api.example.com/v1/tools/email/dmarc?domain=news.example.com"
+```
+
+## Organisational domain inheritance
+
+A subdomain with no `_dmarc` record of its own inherits from its organisational domain — the registrable domain, computed from the public suffix list. Where that happens it is the `sp` tag, not `p`, that governs the subdomain. `effective_policy` carries the one that actually applies, so a subdomain under `p=reject; sp=none` is correctly reported as unprotected rather than as enforcing.
+
+## External report authorisation
+
+RFC 7489 section 7.1 requires a domain named in `rua` or `ruf` to consent to receiving reports for your domain by publishing:
+
+```
+<your-domain>._report._dmarc.<their-domain>  TXT  "v=DMARC1"
+```
+
+Without it, conforming receivers discard every report silently. The domain appears configured for reporting and receives nothing — which looks identical to nobody spoofing it. This endpoint performs that lookup for each external destination and reports the result in `authorised`.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `missing` | fail | No DMARC record on the domain or its organisational domain. |
+| `multiple_records` | fail | More than one record; receivers ignore the policy entirely. |
+| `syntax_errors` | fail | The record cannot be parsed, leaving no policy in force. |
+| `policy_reject` | pass | `p=reject` — failing mail is refused. |
+| `policy_quarantine` | warn | `p=quarantine` — failing mail goes to spam. |
+| `policy_none` | fail | Monitoring only; the domain can still be spoofed. |
+| `partial_enforcement` | warn | `pct` below 100, so the policy applies to only part of the mail. |
+| `subdomain_weaker` | warn | `sp` is weaker than `p`, leaving subdomains exposed. |
+| `no_rua` | fail | No aggregate report destination, so spoofing goes unseen. |
+| `rua_unauthorised` | fail | An external destination has not published the authorisation record. |
+| `ruf_unauthorised` | warn | The same for forensic reports. |
+| `inherited` | info | The policy comes from the organisational domain. |
+| `strict_alignment` | info | `adkim` or `aspf` is strict, which breaks subdomain signing. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "domain": "news.example.com",
+  "found": true,
+  "found_at": "_dmarc.example.com",
+  "inherited": true,
+  "org_domain": "example.com",
+  "record": "v=DMARC1; p=quarantine; sp=reject; rua=mailto:dmarc@reports.example.net",
+  "record_count": 1,
+  "policy": "quarantine",
+  "subdomain_policy": "reject",
+  "effective_policy": "reject",
+  "percent": 100,
+  "adkim": "r",
+  "aspf": "r",
+  "report_interval": 86400,
+  "aggregate_reports": [
+    {
+      "uri": "mailto:dmarc@reports.example.net",
+      "scheme": "mailto",
+      "address": "dmarc@reports.example.net",
+      "domain": "reports.example.net",
+      "external": true,
+      "authorised": false,
+      "auth_error": "no authorisation record at news.example.com._report._dmarc.reports.example.net"
+    }
+  ],
+  "tags": { "v": "DMARC1", "p": "quarantine", "sp": "reject" }
+}
+```
+
+`effective_policy` is the field to read: it accounts for inheritance, where `policy` alone would overstate protection.
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

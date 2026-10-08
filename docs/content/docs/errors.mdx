@@ -1,0 +1,63 @@
+---
+title: Errors
+description: Every error code the Vnytros API can return, with its HTTP status and meaning.
+---
+
+All errors share the same JSON shape, regardless of endpoint:
+
+```json
+{
+  "Code": "DOMAIN_NOT_FOUND",
+  "Message": "Domain not found or no nameservers found",
+  "StatusCode": 404
+}
+```
+
+- **`Code`** — a stable, machine-readable identifier. Branch on this, not on the message.
+- **`Message`** — a human-readable description (may change wording over time).
+- **`StatusCode`** — mirrors the HTTP status.
+
+## Error codes
+
+| Code | HTTP | Meaning |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | Malformed request body or missing required parameter |
+| `INVALID_INPUT` | 400 | Request validation failed |
+| `INVALID_API_KEY` | 400 | API key not recognized |
+| `INVALID_TOKEN` | 400 | Invalid or expired verification / reset token |
+| `UNAUTHORIZED` | 401 | No authenticated principal found |
+| `UNAUTHORIZED_TOKEN` | 401 | Missing / malformed / invalid bearer token |
+| `TOKEN_EXPIRED` | 401 | Access token has expired |
+| `INVALID_CREDENTIALS` | 401 | Wrong email or password |
+| `INVALID_REFRESH` | 401 | Invalid or expired refresh token |
+| `FORBIDDEN` | 403 | Role not allowed for this endpoint |
+| `EMAIL_UNVERIFIED` | 403 | Account email is not verified |
+| `NOT_FOUND` | 404 | Resource not found |
+| `DOMAIN_NOT_FOUND` | 404 | Domain not found or has no nameservers |
+| `METHOD_NOT_ALLOWED` | 405 | HTTP method not allowed for this path |
+| `CONFLICT` | 409 | Resource conflict |
+| `USER_EXISTS` | 409 | A user with this email already exists |
+| `ALREADY_VERIFIED` | 409 | Account is already verified |
+| `RATE_LIMITED` | 429 | Too many requests. Sent with a `Retry-After` header |
+| `NOT_IMPLEMENTED` | 501 | Endpoint not implemented |
+| `INTERNAL_SERVER_ERROR` | 500 | Unhandled server error |
+
+## Handling errors
+
+```ts
+const res = await fetch(`${API}/v1/detect?domain=${domain}`);
+const body = await res.json();
+
+if (!res.ok) {
+  switch (body.Code) {
+    case "DOMAIN_NOT_FOUND":
+      // show "we couldn't find that domain"
+      break;
+    case "TOKEN_EXPIRED":
+      // refresh the access token and retry
+      break;
+    default:
+      // generic failure
+  }
+}
+```

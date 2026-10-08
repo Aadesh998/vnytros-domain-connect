@@ -1,0 +1,33 @@
+# Template: rendered by deploy/scripts/nginx-install.sh with
+#   envsubst '${DOMAIN}' < grafana.conf.template > /etc/nginx/conf.d/grafana.conf
+# Only ${DOMAIN} is substituted; nginx's own $variables are left alone.
+# Grafana reads every metric and trace you collect. As shipped, the only thing
+# guarding it is the Grafana login, so keep GRAFANA_ADMIN_PASSWORD strong and
+# anonymous access off — or uncomment the allowlist below. Set GRAFANA_ROOT_URL
+# (deploy/.env) to https://grafana.<your-domain>.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name grafana.${DOMAIN};
+
+    client_max_body_size 16m;
+
+    access_log /var/log/nginx/grafana.access.log;
+    error_log  /var/log/nginx/grafana.error.log;
+
+    location / {
+        # allow <YOUR_ADMIN_IP>;
+        # deny all;
+        proxy_pass http://vnytros_grafana;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        $connection_upgrade;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+    }
+}

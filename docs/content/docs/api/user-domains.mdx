@@ -1,0 +1,101 @@
+---
+title: List & Get Domains
+description: Retrieve the domains linked to your account.
+---
+
+Two endpoints return the domains your account has linked. Both require an
+[API key](/docs/authentication#api-keys).
+
+## List domains
+
+```
+GET /v1/connect/domains
+```
+
+Returns every domain linked by your account.
+
+```bash
+curl "https://api.example.com/v1/connect/domains" \
+  -H "Authorization: Bearer <api_key>"
+```
+
+### Response `200`
+
+```json
+[
+  {
+    "id": 1,
+    "user_id": 1,
+    "domain_name": "example.com",
+    "status": "completed",
+    "ip": "192.0.2.10",
+    "target": "cname.your-app.com",
+    "text_record": "vnytros-verify=abc123",
+    "session": "8f3c…",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-02T00:00:00Z"
+  }
+]
+```
+
+### Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | Missing or invalid API key |
+| `INTERNAL_SERVER_ERROR` | 500 | Query failed |
+
+---
+
+## Get a single domain
+
+```
+GET /v1/connect/domain
+```
+
+Returns one linked domain by name.
+
+### Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | The linked domain to fetch |
+
+```bash
+curl "https://api.example.com/v1/connect/domain?domain=example.com" \
+  -H "Authorization: Bearer <api_key>"
+```
+
+### Response `200`
+
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "domain_name": "example.com",
+  "status": "completed",
+  "ip": "192.0.2.10",
+  "target": "cname.your-app.com",
+  "text_record": "vnytros-verify=abc123",
+  "session": "8f3c…",
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-02T00:00:00Z"
+}
+```
+
+### Domain status values
+
+| Status | Meaning |
+| --- | --- |
+| `pending` | Records not yet detected |
+| `ip_applied` | A record live; TXT/CNAME still propagating |
+| `completed` | Fully verified and connected |
+
+### Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | Missing or invalid API key |
+| `BAD_REQUEST` | 400 | Missing `domain` query param |
+| `NOT_FOUND` | 404 | Domain isn't linked to your account |
+| `INTERNAL_SERVER_ERROR` | 500 | Query failed |

@@ -1,0 +1,197 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * vnytros design tokens — Midnight Aurora Edition
+ *
+ * Premium dark-first design system with:
+ * - deep graphite/navy backgrounds
+ * - cinematic indigo glow system
+ * - elevated surface hierarchy
+ * - soft premium contrast
+ * - glassmorphism-ready surfaces
+ * - elegant typography scaling
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─────────────────────────────────────────────────────────────
+   CORE DESIGN TOKENS
+───────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ── typography ─────────────────────────────────────────── */
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* ── base canvas ───────────────────────────────────────── */
+  --color-vn-bg: #06070A;
+  --color-vn-bg-2: #0B0D12;
+
+  /* ── surface hierarchy ────────────────────────────────── */
+  --color-vn-surface: #11141A;
+  --color-vn-surface-2: #171B22;
+  --color-vn-surface-3: #1E2430;
+
+  /* ── borders / separators ─────────────────────────────── */
+  --color-vn-hairline: rgba(255, 255, 255, 0.05);
+  --color-vn-hairline-2: rgba(255, 255, 255, 0.08);
+  --color-vn-hairline-3: rgba(255, 255, 255, 0.14);
+
+  /* ── text system ──────────────────────────────────────── */
+  --color-vn-text: #F5F7FB;
+  --color-vn-text-2: #B8C0D0;
+  --color-vn-text-3: #7D8798;
+  --color-vn-text-4: #4F5868;
+
+  /* ── premium indigo accent ────────────────────────────── */
+  --color-vn-accent: #8B7CFF;
+  --color-vn-accent-2: #B2AAFF;
+
+  --color-vn-accent-soft: rgba(139, 124, 255, 0.14);
+
+  /* ── cyan support accent ──────────────────────────────── */
+  --color-vn-cyan: #5FD4FF;
+  --color-vn-cyan-soft: rgba(95, 212, 255, 0.14);
+
+  /* ── semantic colors ──────────────────────────────────── */
+  --color-vn-success: #3EDC97;
+  --color-vn-success-soft: rgba(62, 220, 151, 0.14);
+
+  --color-vn-warn: #FFB84D;
+  --color-vn-warn-soft: rgba(255, 184, 77, 0.14);
+
+  --color-vn-danger: #FF6B81;
+  --color-vn-danger-soft: rgba(255, 107, 129, 0.14);
+
+  /* ── shadows ──────────────────────────────────────────── */
+  --shadow-vn-soft:
+    0 4px 24px rgba(0, 0, 0, 0.28);
+
+  --shadow-vn-elevated:
+    0 12px 48px rgba(0, 0, 0, 0.42);
+
+  --shadow-vn-glow:
+    0 0 0 1px rgba(139, 124, 255, 0.08),
+    0 8px 32px rgba(139, 124, 255, 0.16);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SHADCN VARIABLE MAPPING
+───────────────────────────────────────────────────────────── */
+
+@theme inline {
+  --color-border: var(--border);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LIGHT MODE
+───────────────────────────────────────────────────────────── */
+
+:root {
+  --border: oklch(0.91 0.006 95);
+  --radius: 0.25rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DARK MODE (PRIMARY EXPERIENCE)
+───────────────────────────────────────────────────────────── */
+
+.dark {
+  --border: oklch(1 0 0 / 8%);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BASE LAYER — global element styles
+───────────────────────────────────────────────────────────── */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    min-height: 100%;
+    scroll-behavior: smooth;
+    background: var(--color-vn-bg);
+  }
+
+  body {
+    min-height: 100%;
+    margin: 0;
+    background: var(--color-vn-bg);
+    color: var(--color-vn-text);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "ss03", "cv11";
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.005em;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CUSTOM UTILITIES
+───────────────────────────────────────────────────────────── */
+
+.vn-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-vn-text-3);
+}
+
+.vn-eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: var(--color-vn-hairline-3);
+}
+
+.vn-dashboard-grid {
+  background-image:
+    linear-gradient(to right, var(--color-vn-hairline) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-vn-hairline) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 85% 60% at 50% 0%, #000 25%, transparent 78%);
+  -webkit-mask-image: radial-gradient(
+    ellipse 85% 60% at 50% 0%,
+    #000 25%,
+    transparent 78%
+  );
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-vn-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-vn-text-4);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-vn-text-3);
+}

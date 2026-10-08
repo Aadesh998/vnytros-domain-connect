@@ -1,0 +1,79 @@
+---
+title: Introduction
+description: The Vnytros Domain Connect API lets you detect DNS providers, connect custom domains, and manage them programmatically.
+---
+
+The **Vnytros API** powers custom-domain onboarding for apps that let customers bring their own domain. It wraps
+provider detection, direct DNS writes, verification, and a set of DNS tools
+behind a small, predictable HTTP API.
+
+Vnytros is a free, open-source community project that you **run yourself**.
+There is no hosted Vnytros API: you deploy the server on your own
+infrastructure ([Self-hosting](/docs/self-hosting)) and call your own instance.
+
+With it you can:
+
+- **Detect** which DNS provider runs a domain.
+- **Look up** live DNS records (A, AAAA, MX, TXT, NS, CNAME) for any domain.
+- **Connect** a customer's domain by writing records directly through a provider API (AWS Route 53 or Hostinger).
+- **Verify** that the expected records have propagated.
+- **Manage** linked domains, API keys, and webhooks for your account.
+
+## Base URL
+
+Every example in these docs uses the placeholder base URL:
+
+```
+https://api.example.com
+```
+
+**Substitute your own deployment's URL** — the public URL of the API you run
+(for local development, `http://localhost:<PORT>`). All endpoint paths are
+relative to it. The same applies to the other placeholders:
+`https://mcp.example.com` for your MCP server and "your deployment's
+dashboard" for the dashboard you host.
+
+## Response format
+
+Successful responses (`2xx`) return the resource as JSON directly — there is no
+envelope wrapper:
+
+```json
+{
+  "domain": "example.com",
+  "nameservers": ["ns1.example.com", "ns2.example.com"]
+}
+```
+
+Errors share a single shape across every endpoint:
+
+```json
+{
+  "Code": "DOMAIN_NOT_FOUND",
+  "Message": "Domain not found or no nameservers found",
+  "StatusCode": 404
+}
+```
+
+See [Errors](/docs/errors) for the complete list of codes.
+
+## Authentication at a glance
+
+Most read-only tools are public. Endpoints that act on your account or your
+customers' domains require either an **API key** or a **JWT access token**.
+
+```
+Authorization: Bearer <api_key_or_access_token>
+```
+
+Read [Authentication](/docs/authentication) for the difference between the two
+and when each applies.
+
+<Cards>
+  <Card title="Quickstart" href="/docs/quickstart" description="Run your own instance, then make your first calls." />
+  <Card title="Authentication" href="/docs/authentication" description="API keys vs. JWT access tokens." />
+  <Card title="API Reference" href="/docs/api/detect-provider" description="Every endpoint, request, and response." />
+  <Card title="Network Tools" href="/docs/tools" description="DNS, TLS, and HTTP checks — no auth required." />
+  <Card title="Errors" href="/docs/errors" description="Every error code the API can return." />
+  <Card title="Self-hosting" href="/docs/self-hosting" description="Deploy the API, dashboard, and MCP server yourself." />
+</Cards>

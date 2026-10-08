@@ -1,0 +1,35 @@
+# Template: rendered by deploy/scripts/nginx-install.sh with
+#   envsubst '${DOMAIN}' < rabbitmq.conf.template > /etc/nginx/conf.d/rabbitmq.conf
+# Only ${DOMAIN} is substituted; nginx's own $variables are left alone.
+# RabbitMQ management console. This is broker administration, not a dashboard:
+# anyone who reaches it can purge queues and read message payloads.
+#
+# As shipped, the only thing guarding it is the RABBITMQ_DEFAULT_PASS login.
+# Prefer an SSH tunnel, or uncomment the allowlist below. You can also leave
+# this host out entirely (see deploy/README.md, "nginx and TLS").
+server {
+    listen 80;
+    listen [::]:80;
+    server_name rabbitmq.${DOMAIN};
+
+    client_max_body_size 16m;
+
+    access_log /var/log/nginx/rabbitmq.access.log;
+    error_log  /var/log/nginx/rabbitmq.error.log;
+
+    location / {
+        # allow <YOUR_ADMIN_IP>;
+        # deny all;
+        proxy_pass http://vnytros_rabbitmq;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        $connection_upgrade;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+    }
+}

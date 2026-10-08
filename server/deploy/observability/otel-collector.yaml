@@ -1,0 +1,62 @@
+# Receives traces from the Go services and forwards them to Tempo.
+#
+# internal/mailforge/telemetry/telemetry.go exports OTLP/HTTP with
+# WithInsecure() to config.OtelEndpoint (default localhost:4318), so the HTTP
+# receiver below is the one actually in use. gRPC is enabled for future use.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  # Keep memory bounded on a small instance; the collector is not the thing we
+  # want OOM-killing the box.
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 60
+    spike_limit_percentage: 20
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  # Span-derived RED metrics, scraped by Prometheus off :8889. This is the only
+  # source of request metrics today, since no service exposes /metrics.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+connectors:
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [5ms, 25ms, 100ms, 250ms, 1s, 5s, 10s]
+    dimensions:
+      - name: http.route
+      - name: http.request.method
+      - name: http.response.status_code
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/tempo, spanmetrics]
+    metrics/spanmetrics:
+      receivers: [spanmetrics]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]
+  telemetry:
+    logs:
+      level: warn
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133

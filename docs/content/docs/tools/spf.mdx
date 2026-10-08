@@ -1,0 +1,101 @@
+---
+title: "SPF Records"
+description: "Expand a domain's entire SPF include tree and count the DNS lookups a receiver would spend against the ten-lookup limit."
+---
+
+```
+GET /v1/tools/email/spf
+```
+
+Expand a domain's entire SPF include tree and count the DNS lookups a receiver would spend. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `spf`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Domain to check |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/email/spf?domain=example.com"
+```
+
+## What it checks
+
+- Expands every `include` and `redirect` recursively, counting each lookup against the limit of ten in RFC 7208 — the limit that makes correct-looking records fail.
+- Resolves `a`, `mx`, `exists` and `ptr` targets to find void lookups, of which only two are permitted.
+- Detects dangling includes, which are a permanent error at the receiver rather than a skipped term.
+- Reports the `all` qualifier, multiple SPF records, syntax errors, the deprecated `ptr` mechanism and records long enough to need multiple strings.
+
+Macro targets such as `exists:%{i}._spf.example.com` cannot be resolved without a connecting client. The lookup is still charged, because a receiver evaluating a real message spends it, and the entry is marked in `lookups`.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `missing` | fail | No `v=spf1` record — no sender is authorised. |
+| `multiple_records` | fail | More than one SPF record; receivers return permerror and ignore both. |
+| `lookup_limit_exceeded` | fail | Over ten DNS lookups. SPF fails for every message sent. |
+| `lookup_limit_near` | warn | Eight or more lookups — one more service breaks it. |
+| `lookup_limit` | pass | Within the limit. |
+| `void_lookup_limit` | fail | More than two mechanisms resolve to nothing. |
+| `dangling_include` | fail | An include target publishes no SPF record. |
+| `all_pass` | fail | Ends in `+all`, authorising the entire internet. |
+| `all_missing` | fail | No `all` mechanism and no redirect. |
+| `all_neutral` | warn | Ends in `?all`, which says nothing about unlisted senders. |
+| `all_fail` / `all_softfail` | pass | Ends in `-all` or `~all`. |
+| `deny_all` | pass | `v=spf1 -all` with no mechanisms: the domain sends no mail. |
+| `ptr_mechanism` | warn | Uses the deprecated `ptr` mechanism. |
+| `syntax_errors` | fail | Terms a receiver cannot parse. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "domain": "example.com",
+  "found": true,
+  "record": "v=spf1 include:_spf.google.com ip4:192.0.2.0/24 ~all",
+  "record_count": 1,
+  "length": 52,
+  "all_qualifier": "~",
+  "lookup_count": 4,
+  "void_count": 0,
+  "ipv4_count": 1,
+  "ipv6_count": 0,
+  "deny_all": false,
+  "includes": ["_spf.google.com"],
+  "senders": ["Google Workspace"],
+  "lookups": [
+    {
+      "domain": "_spf.google.com",
+      "via": "include",
+      "depth": 0,
+      "record": "v=spf1 include:_netblocks.google.com ~all",
+      "void": false,
+      "sender": "Google Workspace",
+      "sequence": 1,
+      "over_limit": false
+    }
+  ],
+  "terms": [
+    { "raw": "include:_spf.google.com", "qualifier": "+", "mechanism": "include", "value": "_spf.google.com" }
+  ],
+  "truncated": false
+}
+```
+
+`lookups` is in evaluation order. Any entry with `over_limit: true` is a mechanism a receiver never reaches.
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

@@ -1,0 +1,182 @@
+---
+title: Open source & self-hosting
+description: Vnytros is free, open source, and self-hosted. Run the API, MCP server, and dashboard yourself, and contribute.
+---
+
+Vnytros is a free, open-source community project, and it is **self-hosted
+only**: the project does not run a public API, MCP server, mail service, or
+user accounts. You deploy the stack on your own infrastructure, create accounts
+on your own deployment, and point every example in these docs (which use
+`https://api.example.com`) at your own URL. There are no plans, tiers, or
+paywalls — every feature is available on your instance.
+
+## Repository
+
+All code lives in one repository,
+[`vnytros/vnytros`](https://github.com/vnytros/vnytros), organised by folder.
+Each folder builds and deploys on its own:
+
+| Folder | What it is | License |
+| --- | --- | --- |
+| [`server/`](https://github.com/vnytros/vnytros/tree/main/server) | The Go API, worker, and MCP server | AGPL-3.0-only |
+| [`dashboard/`](https://github.com/vnytros/vnytros/tree/main/dashboard) | The dashboard (accounts, API keys, domains, mail) | AGPL-3.0-only |
+| [`website/`](https://github.com/vnytros/vnytros/tree/main/website) | The project website | AGPL-3.0-only |
+| [`docs/`](https://github.com/vnytros/vnytros/tree/main/docs) | This documentation site | AGPL-3.0-only |
+| [`sdk/`](https://github.com/vnytros/vnytros/tree/main/sdk) | The JavaScript SDK (`@vnytros/sdk`) | MIT |
+
+### Domain Connect template
+
+The Vnytros `custom-domain` service template is merged upstream in the official
+[Domain-Connect/Templates](https://github.com/Domain-Connect/Templates)
+repository — see pull requests
+[#1064](https://github.com/Domain-Connect/Templates/pull/1064) and
+[#1166](https://github.com/Domain-Connect/Templates/pull/1166). The `server/`
+folder ships a copy at `server/templates/vnytros.dev.custom-domain.json`.
+
+The server serves `templates/<DC_PROVIDER_DOMAIN>.custom-domain.json` at
+[`/.well-known/domainconnect/<providerId>/custom-domain`](/docs/protocol#service-template),
+so if you set `DC_PROVIDER_DOMAIN` to your own domain, add a copy of the
+template under that name.
+
+## Run the API locally
+
+You need Go, Docker (with Compose), `make`, and `openssl`.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/vnytros/vnytros && cd vnytros/server
+```
+
+The remaining server commands run from `vnytros/server`.
+
+### 2. Generate the signing keypair
+
+The server signs Domain Connect requests with an RSA key and publishes the
+public half at [`/_domainconnect/_dckeypubv1.public`](/docs/protocol#signing-public-key).
+Generate your own pair — never reuse someone else's:
+
+```bash
+make keys   # writes keys/private_key.pem and keys/public_key.pem
+```
+
+<Callout type="warn">
+`keys/` holds your private key. It is git-ignored; keep it that way and never
+commit or share it.
+</Callout>
+
+### 3. Start Postgres and RabbitMQ
+
+The bundled `docker-compose.yaml` runs a throwaway Postgres and RabbitMQ bound
+to `127.0.0.1`, for local development only:
+
+```bash
+docker compose up -d
+```
+
+### 4. Configure the environment
+
+Copy the example environment file and fill in your own values. The server
+loads `.env.production` at startup unless `ENV_FILE` points elsewhere.
+
+```bash
+cp .env.example .env.production   # or set ENV_FILE to load a different file
+```
+
+The main variables, by group (see `.env.example` for the full list):
+
+| Group | Variables |
+| --- | --- |
+| Server | `BASE_URL`, `FRONTEND_URL`, `ALLOWED_ORIGINS` (the API listens on port 8000) |
+| Database | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` |
+| Queue | `RABITMQ` (AMQP URL) |
+| Auth | `JWT_SECRET`, `JWT_ACCESS_TTL_MIN`, `JWT_REFRESH_TTL_HOURS`, `AUTH_COOKIE_DOMAIN`, `AUTH_COOKIE_SECURE` |
+| Signing secrets | `APIKEY_SIGNING_SECRET`, `WEBHOOK_SIGNING_SECRET` |
+| Email (verification, password reset) | `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM_EMAIL`, `SMTP_PASSWORD` |
+| Social login (optional) | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CLIENT_CALLBACK_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_CLIENT_CALLBACK_URL` |
+| MCP / OAuth | `MCP_SERVER_BASE_URL`, `OAUTH_ISSUER_URL`, `OAUTH_ALLOWED_CALLBACK_URLS` |
+| Domain Connect | `DC_PROVIDER_DOMAIN` (your own domain, used as the `providerId`) |
+| Observability (optional) | `OTEL_ENDPOINT`, `OTEL_TRACES_SAMPLE_RATIO`, `METRICS_HOST` |
+
+The database credentials must match `docker-compose.yaml` if you use it.
+
+### 5. Migrate and run
+
+```bash
+make migration   # create tables and load the DNS-provider reference data
+make run         # API server
+make run-worker  # background jobs (verification, webhooks) — separate terminal
+make run-mcp     # optional: MCP server — separate terminal
+```
+
+The API now answers on port 8000. Point any example in these
+docs at it instead of the placeholder `https://api.example.com`:
+
+```bash
+curl "http://localhost:8000/v1/detect?domain=example.com"
+```
+
+The MCP server listens on `MCP_SERVER_BASE_URL` (`http://localhost:5000` by
+default). MCP clients connect to `<MCP_SERVER_BASE_URL>/mcp` — in production,
+your own public URL such as `https://mcp.example.com/mcp`.
+
+### 6. Create an account
+
+Accounts live in your own database. Sign up through your deployment's
+dashboard, or with [`POST /v1/auth/signup`](/docs/account#sign-up). Email
+verification and password reset need the `SMTP_*` variables configured.
+Then create an API key on the dashboard or with
+[`POST /v1/create/api`](/docs/api-keys).
+
+## Run the dashboard locally
+
+From the root of your `vnytros` clone:
+
+```bash
+cd dashboard
+npm install
+cp .env.example .env.local   # set VITE_API_BASE_URL (and the other URLs) to your deployment
+npm run dev
+```
+
+## Run the project website locally (optional)
+
+The landing site is the project's public website; you don't need it to run
+the API or dashboard.
+
+```bash
+cd website
+npm install
+npm run dev
+```
+
+Each folder's README lists any further environment variables it reads.
+
+## Run these docs locally
+
+```bash
+cd docs
+npm install
+npm run dev
+```
+
+## Contributing
+
+Issues and pull requests are welcome on
+[`vnytros/vnytros`](https://github.com/vnytros/vnytros). Open an issue first
+for anything larger than a small fix, so the approach can be agreed before you
+write the code. The repository's
+[`CONTRIBUTING.md`](https://github.com/vnytros/vnytros/blob/main/CONTRIBUTING.md)
+lists the setup and checks for each folder.
+
+## License
+
+- The server, dashboard, website, and docs (`server/`, `dashboard/`,
+  `website/`, `docs/`) are licensed under the
+  [GNU Affero General Public License v3.0 only](https://www.gnu.org/licenses/agpl-3.0.html)
+  (`AGPL-3.0-only`). If you run a modified version as a network service, you
+  must offer its source to the people who use it.
+- The SDK (`sdk/`) is licensed under the [MIT License](https://opensource.org/license/mit),
+  so you can use it in any application. Each folder carries its own `LICENSE`
+  file.
+

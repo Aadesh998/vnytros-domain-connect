@@ -1,0 +1,88 @@
+---
+title: "Email Authentication"
+description: "Run SPF, DKIM, DMARC and MX together and report the cross-checks that only appear when all four are read at once."
+---
+
+```
+GET /v1/tools/email/auth
+```
+
+Run SPF, DKIM, DMARC and MX together and report the cross-checks between them. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `email_auth`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Domain to check |
+| `selector` | string | no | Comma-separated DKIM selectors. Omitted, the 54 selectors used by the major mail providers are probed |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/email/auth?domain=example.com"
+```
+
+## What it checks
+
+- Runs the [SPF](/docs/tools/spf), [DKIM](/docs/tools/dkim) and [DMARC](/docs/tools/dmarc) checks concurrently and merges their findings, prefixing each id with its mechanism.
+- Resolves MX records, flags exchangers that do not resolve, and recognises the RFC 7505 null MX that declares a domain accepts no mail.
+- Adds the cross-checks no single mechanism can produce — see below.
+
+## Cross-checks
+
+These are the findings unique to this endpoint. Each depends on the state of two or three mechanisms at once, so no single-mechanism checker can report them.
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `cross.enforcing_without_auth` | fail | DMARC is at quarantine or reject while SPF is unusable and no valid DKIM key exists — the domain instructs receivers to discard its own legitimate mail. |
+| `cross.enforcement_over_broken_spf` | fail | An enforcing policy rests on an SPF record that exceeds the lookup limit, with no DKIM key to authenticate through instead. |
+| `cross.spoofable` | warn | The domain receives mail and sits at `p=none`, so anyone can send as it and receivers will deliver. |
+| `cross.unprotected_parked` | warn | No MX and no SPF: the domain neither sends nor receives, and nothing stops a forger using it. |
+| `cross.no_mail` | pass | The domain declares it sends nothing (`v=spf1 -all`, no DKIM key) and carries an enforcing policy. |
+| `cross.no_mail_unenforced` | warn | The domain sends nothing but its DMARC policy still asks receivers to deliver forged mail. |
+| `cross.spf_only` | warn | No valid DKIM key, so DMARC can pass only through SPF — which breaks whenever a message is forwarded. |
+| `cross.aligned` | pass | SPF resolves within the limit, a valid DKIM key exists, and DMARC is enforcing. |
+
+Findings from the individual mechanisms keep their own ids under a prefix: `spf.lookup_limit_exceeded`, `dkim.key_1024_selector1`, `dmarc.no_rua`, and MX findings under `mx.`.
+
+## Response `200`
+
+The `raw` object for this tool nests each mechanism's own raw payload:
+
+```json
+{
+  "domain": "example.com",
+  "mx": {
+    "domain": "example.com",
+    "hosts": [
+      {
+        "preference": 10,
+        "host": "aspmx.l.google.com",
+        "ips": ["142.250.150.26"],
+        "provider": "Google Workspace",
+        "resolves": true
+      }
+    ],
+    "null_mx": false,
+    "providers": ["Google Workspace"],
+    "receives_mail": true
+  },
+  "spf": { "...": "see /docs/tools/spf" },
+  "dkim": { "...": "see /docs/tools/dkim" },
+  "dmarc": { "...": "see /docs/tools/dmarc" },
+  "component_scores": { "spf": 94, "dkim": 100, "dmarc": 100 }
+}
+```
+
+`component_scores` carries each mechanism's own score before merging, so a dashboard can show three sub-scores alongside the combined grade.
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

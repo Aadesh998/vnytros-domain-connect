@@ -1,0 +1,87 @@
+---
+title: Webhooks
+description: Receive domain lifecycle events and inspect their delivery history.
+---
+
+When an API key has a `web_hook` URL configured, Vnytros POSTs an event to it
+whenever a linked domain changes state.
+
+## Event payload
+
+```json
+{
+  "event": "domain.connected",
+  "data": {
+    "domain": "example.com",
+    "user_id": 1
+  },
+  "timestamp": "2026-06-29T12:00:00Z"
+}
+```
+
+| Event | Fired when |
+| --- | --- |
+| `domain.connected` | A domain reaches `completed` (fully verified) |
+| `domain.error` | The provider reported an error during the Domain Connect flow |
+
+## Delivery & retries
+
+Deliveries are retried and recorded. Each entry carries the response status,
+body, attempt count, and last error — readable via the endpoints below.
+
+## List webhook events
+
+```
+GET /v1/get/webhooks
+```
+
+Requires a [JWT access token](/docs/authentication#jwt-access-tokens)
+(`user` / `admin`). [Cursor-paginated](/docs/pagination).
+
+**`200`**
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "web_hook": "https://your-app.com/webhooks/vnytros",
+      "event": "domain.connected",
+      "status": "delivered",
+      "payload": "{…}",
+      "reponse_status": 200,
+      "attempts": 1,
+      "last_error": "",
+      "api_key_id": 1,
+      "user_id": 1,
+      "created_at": "2026-06-29T12:00:00Z"
+    }
+  ],
+  "next_cursor": 2,
+  "limit": 20,
+  "has_more": false
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | string | `pending`, `delivered`, or `failed` |
+| `reponse_status` | integer | HTTP status returned by your endpoint |
+| `attempts` | integer | Delivery attempts so far |
+| `last_error` | string | Error from the most recent failed attempt |
+
+## Filter webhook events
+
+```
+GET /v1/filter/webhooks
+```
+
+Same response shape as above, with optional filters:
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `status` | string | `pending` / `delivered` / `failed` |
+| `event` | string | Event type, e.g. `domain.connected` |
+| `api_key_id` | integer | Restrict to one API key |
+| `response_status` | integer | Filter by HTTP response status |
+| `from` / `to` | string | Date range |
+| `cursor` / `limit` | — | [Pagination](/docs/pagination) |

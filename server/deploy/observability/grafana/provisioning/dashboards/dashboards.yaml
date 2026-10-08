@@ -1,0 +1,18 @@
+# Loads every dashboard JSON from disk on boot and on change.
+#
+# allowUiUpdates=false keeps these files the source of truth: edits made in the
+# browser are not persisted, so the dashboards are reproducible from the repo.
+# To change one, edit the JSON here and re-run `make sync-deploy` + restart.
+apiVersion: 1
+
+providers:
+  - name: vnytros
+    orgId: 1
+    folder: Vnytros
+    type: file
+    disableDeletion: false
+    allowUiUpdates: false
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false

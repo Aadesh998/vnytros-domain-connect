@@ -1,0 +1,5 @@
+# Everything shared (bin/, *.log, .env*, keys/, *.pem) is in the root
+# .gitignore. Only server-specific rules live here.
+
+# Test binary produced by `go test -c -o test` style local runs.
+/test

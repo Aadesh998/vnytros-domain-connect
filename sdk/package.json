@@ -1,0 +1,57 @@
+{
+  "name": "@vnytros/sdk",
+  "version": "0.2.0",
+  "description": "Official JavaScript/TypeScript SDK for the Vnytros API (open source).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vnytros/vnytros.git",
+    "directory": "sdk"
+  },
+  "homepage": "https://github.com/vnytros/vnytros/tree/main/sdk#readme",
+  "bugs": {
+    "url": "https://github.com/vnytros/vnytros/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test tests/*.test.js",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run typecheck",
+    "playground": "npm run build && node playground/server.mjs"
+  },
+  "keywords": [
+    "domain-connect",
+    "dns",
+    "custom-domains",
+    "vnytros"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  }
+}

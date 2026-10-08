@@ -1,0 +1,72 @@
+---
+title: "Domain Registration"
+description: "Look up registrar, expiry, nameservers and registry status codes over RDAP."
+---
+
+```
+GET /v1/tools/domain/info
+```
+
+Look up registrar, expiry, nameservers and registry status codes over RDAP. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `domain_info`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Domain to look up |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/domain/info?domain=example.com"
+```
+
+## What it checks
+
+- Resolves the registry endpoint through the IANA RDAP bootstrap registry, cached daily.
+- Returns registration, expiry and last-changed dates plus registrar and abuse contact.
+- Translates EPP status codes into plain English.
+- Flags a missing registrar transfer lock.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `expiry` | pass | Registration is current. |
+| `expired` | fail | The registration has lapsed. |
+| `expiring_urgent` / `expiring_soon` / `expiring` | fail/warn | Within 7, 30 or 90 days. |
+| `transfer_lock` | pass | Registrar transfer lock is enabled. |
+| `no_transfer_lock` | warn | The domain can be transferred without unlocking. |
+| `status_clienthold` | fail | A registry status is preventing resolution. |
+| `dnssec_delegated` | pass | The registry holds a DS record. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "domain": "example.com",
+  "tld": "com",
+  "source": "rdap",
+  "registrar": "Name.com, Inc.",
+  "statuses": ["client transfer prohibited"],
+  "nameservers": ["ns1.example.net", "ns2.example.net"],
+  "dnssec": false,
+  "registered": "2026-04-19T06:31:40Z",
+  "expires": "2027-04-19T06:31:40Z",
+  "days_to_expiry": 246,
+  "abuse_email": "abuse@name.com"
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

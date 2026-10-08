@@ -1,0 +1,163 @@
+---
+title: Account & Auth
+description: Sign up, log in, refresh tokens, reset passwords, and read the current user.
+---
+
+These endpoints manage user accounts and issue the [JWT access tokens](/docs/authentication#jwt-access-tokens)
+the dashboard uses. All are under `/v1/auth` except `/v1/me`.
+
+## Sign up
+
+```
+POST /v1/auth/signup
+```
+
+```json
+{ "name": "Jane Doe", "email": "jane@example.com", "password": "at-least-8-chars" }
+```
+
+Sends a verification email. Validation: `name` and `email` required, `password`
+≥ 8 characters.
+
+**`200`**
+```json
+{ "message": "Verification email sent", "email": "jane@example.com" }
+```
+
+Errors: `BAD_REQUEST`, `INVALID_INPUT`, `USER_EXISTS` (409).
+
+## Verify email
+
+```
+GET /v1/auth/verify?token=<token>
+```
+
+Confirms the email using the token from the signup mail.
+
+Errors: `INVALID_INPUT`, `INVALID_TOKEN`, `ALREADY_VERIFIED` (409).
+
+## Log in
+
+```
+POST /v1/auth/login
+```
+
+```json
+{ "email": "jane@example.com", "password": "at-least-8-chars" }
+```
+
+**`200`**
+```json
+{
+  "id": 1,
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "user_type": "user",
+  "access_token": "eyJhbGciOi…",
+  "refresh_token": "eyJhbGciOi…",
+  "expires_in": 900
+}
+```
+
+`expires_in` is seconds (access token lives 15 min). Errors:
+`INVALID_CREDENTIALS` (401), `EMAIL_UNVERIFIED` (403).
+
+## Refresh tokens
+
+```
+POST /v1/auth/refresh
+```
+
+```json
+{ "refresh_token": "eyJhbGciOi…" }
+```
+
+**`200`** returns a fresh `access_token` / `refresh_token` pair and `expires_in`.
+Errors: `INVALID_REFRESH` (401).
+
+## Log out
+
+```
+POST /v1/auth/logout
+```
+
+No request body. Clears the authentication cookies on the response and returns:
+
+```json
+{ "message": "Logged out" }
+```
+
+This only clears the browser session. A bearer `access_token` you are holding
+stays valid until it expires, so a server-side integration should discard its
+own copy of the token rather than rely on this call.
+
+## Password reset
+
+```
+POST /v1/auth/forget-password
+```
+```json
+{ "email": "jane@example.com" }
+```
+Always responds `200` with a neutral message (no account enumeration).
+
+```
+POST /v1/auth/reset-password
+```
+```json
+{ "token": "<reset-token>", "new_password": "…", "confirm_password": "…" }
+```
+`new_password` ≥ 8 chars and must equal `confirm_password`. Errors:
+`INVALID_INPUT`, `INVALID_TOKEN`.
+
+## Social login
+
+```
+GET /v1/auth/google/login    →  redirects to Google
+GET /v1/auth/google/callback →  returns tokens
+GET /v1/auth/github/login    →  redirects to GitHub
+GET /v1/auth/github/callback →  returns tokens
+```
+
+The `*/login` routes `307`-redirect to the provider. After the user approves,
+the callback returns the same token payload as [login](#log-in).
+
+## Current user
+
+```
+GET /v1/me
+```
+
+Requires a [JWT access token](/docs/authentication#jwt-access-tokens)
+(`user` or `admin`).
+
+```bash
+curl "https://api.example.com/v1/me" -H "Authorization: Bearer <access_token>"
+```
+
+**`200`**
+```json
+{
+  "id": 1,
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "user_type": "user",
+  "country": "IN",
+  "city": "Bengaluru",
+  "verified": true,
+  "domain_count": 10
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | integer | User ID |
+| `name` | string | Display name |
+| `email` | string | Account email |
+| `user_type` | string | Role — `user` or `admin` |
+| `country` | string | Optional; omitted when unknown |
+| `city` | string | Optional; omitted when unknown |
+| `verified` | boolean | Whether the email address is verified |
+| `domain_count` | integer | Informational domain counter on the account. Nothing is gated on it |
+
+Errors: `UNAUTHORIZED_TOKEN`, `TOKEN_EXPIRED` (401), `FORBIDDEN` (403).

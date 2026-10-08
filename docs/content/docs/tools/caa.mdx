@@ -1,0 +1,71 @@
+---
+title: "CAA Records"
+description: "Report which certificate authorities may issue for a domain, following CAA inheritance up the parent zones."
+---
+
+```
+GET /v1/tools/dns/caa
+```
+
+Report which certificate authorities may issue for a domain, following CAA inheritance up the parent zones. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `caa`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Domain to check |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/dns/caa?domain=example.com"
+```
+
+## What it checks
+
+- Walks up each parent domain until a CAA record set is found, exactly as a certificate authority does.
+- Parses `issue`, `issuewild` and `iodef` tags and resolves CA identifiers to readable names.
+- Detects the empty `issue ";"` form that blocks all issuance.
+- Flags critical-flagged tags a CA may not understand.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `no_caa` | warn | No CAA anywhere — any public CA may issue. |
+| `issue_policy` | pass | Issuance is restricted to named CAs. |
+| `issuance_blocked` | fail | The policy forbids every CA from issuing. |
+| `issuewild_policy` | pass | Wildcard issuance is restricted. |
+| `inherited` | info | The governing policy sits on a parent domain. |
+| `no_iodef` | warn | No reporting address for blocked issuance attempts. |
+| `unknown_critical` | warn | A critical tag CAs may not recognise. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "found_at": "example.com",
+  "inherited": false,
+  "records": [
+    { "flag": 0, "tag": "issue", "value": "letsencrypt.org", "critical": false }
+  ],
+  "allowed_cas": ["letsencrypt.org"],
+  "allowed_wildcard_cas": [],
+  "report_to": ["mailto:security@example.com"],
+  "issuance_blocked": false,
+  "searched_from": "example.com"
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

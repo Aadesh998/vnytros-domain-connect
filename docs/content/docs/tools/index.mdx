@@ -1,0 +1,168 @@
+---
+title: "Overview"
+description: "Eleven public DNS, TLS and HTTP diagnostic endpoints that all return the same report envelope."
+---
+
+The network tools are public diagnostic endpoints for DNS, TLS and HTTP. They
+need **no authentication** and no API key.
+
+Every tool returns the same envelope, so one integration handles all of them.
+Each check produces findings that carry a plain-English explanation and, where
+something is wrong, a concrete fix.
+
+## The report envelope
+
+```json
+{
+  "tool": "dns_propagation",
+  "target": "example.com",
+  "verdict": "pass",
+  "score": 100,
+  "grade": "A+",
+  "summary": "Fully propagated across 25/25 resolvers",
+  "findings": [
+    {
+      "id": "consistent",
+      "title": "Fully propagated",
+      "status": "pass",
+      "severity": "info",
+      "detail": "All 25 responding resolvers return the same A record."
+    }
+  ],
+  "raw": {},
+  "timing_ms": 412,
+  "checked_at": "2026-08-16T18:26:06Z"
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `tool` | string | Stable identifier for the tool that produced the report |
+| `target` | string | The normalized domain, host or URL that was checked |
+| `verdict` | string | `pass`, `warn`, `fail`, or `info` — the worst status among the findings |
+| `score` | integer | 0–100, computed from the findings (see below) |
+| `grade` | string | `A+`, `A`, `B`, `C`, `D`, or `F` |
+| `summary` | string | One-line human description of the outcome |
+| `findings` | object[] | Individual observations, worst first |
+| `raw` | object | Tool-specific unprocessed data the findings were derived from |
+| `timing_ms` | integer | How long the check took |
+| `checked_at` | string | RFC 3339 timestamp, UTC |
+
+### Findings
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | string | Stable across runs, so reports can be diffed and alerts deduplicated |
+| `title` | string | Short label |
+| `status` | string | `pass`, `warn`, `fail`, or `info` |
+| `severity` | string | `critical`, `high`, `medium`, `low`, or `info` |
+| `detail` | string | What was observed, in plain language |
+| `remediation` | string? | How to fix it. Present only when something is wrong |
+| `evidence` | any? | Supporting data, where a finding has any |
+
+Findings are sorted worst first: failures, then warnings, then notes, then
+passes; within a status, by descending severity.
+
+### Scoring
+
+The score starts at 100. Each **failing** finding deducts by severity, and a
+**warning** costs half as much:
+
+| Severity | Deduction |
+| --- | --- |
+| `critical` | 40 |
+| `high` | 25 |
+| `medium` | 12 |
+| `low` | 5 |
+| `info` | 0 |
+
+Grades map as `A+` ≥ 95, `A` ≥ 90, `B` ≥ 80, `C` ≥ 70, `D` ≥ 60, otherwise `F`.
+
+## Status codes
+
+A report is returned with **HTTP 200 even when its verdict is `fail`** — the
+check ran successfully, and what it found is the payload. A non-200 means the
+request itself could not be served.
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | The target is missing or is not a usable domain or URL |
+| `FORBIDDEN` | 403 | The target resolves to a private, loopback or cloud-metadata address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |
+
+## Rate limits and caching
+
+By default, public tool endpoints allow **60 requests per minute per IP**, absorbing short
+bursts of up to 15. Exceeding it returns `429` with a `Retry-After` header.
+
+Reports are cached for 60 seconds per target, so repeating an identical check
+returns immediately and does not re-query upstream infrastructure.
+
+## Input handling
+
+Domain inputs accept the shapes people actually paste. All of these normalize to
+`example.com`:
+
+```
+example.com
+EXAMPLE.COM.
+https://example.com/path?q=1
+example.com:8443
+user@example.com
+```
+
+Internationalized domains are converted to punycode. URL inputs default to
+`https://` when no scheme is given.
+
+## Available tools
+
+| Tool | Endpoint |
+| --- | --- |
+| [DNS Propagation](/docs/tools/dns-propagation) | `GET /v1/tools/dns/propagation` |
+| [Nameserver Consistency](/docs/tools/nameservers) | `GET /v1/tools/dns/nameservers` |
+| [CNAME Chain](/docs/tools/cname-chain) | `GET /v1/tools/dns/cname` |
+| [CAA Records](/docs/tools/caa) | `GET /v1/tools/dns/caa` |
+| [SOA & TTL](/docs/tools/soa) | `GET /v1/tools/dns/soa` |
+| [DNSSEC](/docs/tools/dnssec) | `GET /v1/tools/dns/dnssec` |
+| [Email Authentication](/docs/tools/email-auth) | `GET /v1/tools/email/auth` |
+| [SPF Records](/docs/tools/spf) | `GET /v1/tools/email/spf` |
+| [DKIM Keys](/docs/tools/dkim) | `GET /v1/tools/email/dkim` |
+| [DMARC Policy](/docs/tools/dmarc) | `GET /v1/tools/email/dmarc` |
+| [Domain Registration](/docs/tools/domain-info) | `GET /v1/tools/domain/info` |
+| [SSL/TLS Certificate](/docs/tools/tls-certificate) | `GET /v1/tools/tls/certificate` |
+| [HTTP Security Headers](/docs/tools/security-headers) | `GET /v1/tools/http/headers` |
+| [Redirect Chain](/docs/tools/redirects) | `GET /v1/tools/http/redirects` |
+| [IP & ASN](/docs/tools/ip-info) | `GET /v1/tools/ip/info` |
+
+## Catalogue endpoint
+
+```
+GET /v1/tools
+```
+
+A machine-readable list of every tool, its id, and the parameters it accepts.
+Public — **no authentication required**. Use it to generate a client, or to
+discover tools added after this page was written.
+
+```bash
+curl "https://api.example.com/v1/tools"
+```
+
+## MCP
+
+Every tool is also exposed over the MCP server that ships with the API
+(`make run-mcp`, see [Self-hosting](/docs/self-hosting)), so AI agents can call
+them directly. Point your MCP client at your own deployment's endpoint:
+`<MCP_SERVER_BASE_URL>/mcp`, for example `https://mcp.example.com/mcp`
+(`http://localhost:5000/mcp` when running locally). It authenticates through
+your deployment's [OAuth server](/docs/oauth). The MCP tool names are `dns_propagation`,
+`dns_nameservers`, `dns_cname_chain`, `dns_caa`, `dns_soa`, `dns_dnssec`,
+`email_authentication`, `email_spf`, `email_dkim`, `email_dmarc`,
+`domain_registration`, `tls_certificate`, `http_security_headers`,
+`http_redirects` and `ip_info`.
+
+The same server also exposes the domain tools: `domain_provider`,
+`domain_connect_settings`, `domain_status`, `domain_verify`,
+`list_user_domains`, `get_user_domain`, `domain_template`, `domain_discovery`
+and `domain_public_key`.

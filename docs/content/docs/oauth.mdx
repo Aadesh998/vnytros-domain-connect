@@ -1,0 +1,103 @@
+---
+title: OAuth 2.1 Server
+description: Vnytros is an OAuth 2.1 authorization server — used by the MCP server and third-party apps.
+---
+
+Vnytros exposes a standards-compliant **OAuth 2.1** authorization server with
+discovery, dynamic client registration, and PKCE. It's what the
+[MCP server](/docs/tools#mcp) and third-party integrations use to obtain
+delegated access to a user's domains.
+
+## Discovery
+
+```
+GET /.well-known/oauth-authorization-server
+```
+
+Returns authorization-server metadata. URLs are built from your deployment's
+`OAUTH_ISSUER_URL`; `https://api.example.com` stands in for it here:
+
+```json
+{
+  "issuer": "https://api.example.com",
+  "authorization_endpoint": "https://api.example.com/oauth/authorize",
+  "token_endpoint": "https://api.example.com/oauth/token",
+  "registration_endpoint": "https://api.example.com/oauth/register",
+  "response_types_supported": ["code"],
+  "grant_types_supported": ["authorization_code", "refresh_token"],
+  "code_challenge_methods_supported": ["S256", "plain"],
+  "token_endpoint_auth_methods_supported": ["none", "client_secret_basic"]
+}
+```
+
+## Register a client
+
+```
+POST /oauth/register
+```
+
+Dynamic client registration:
+
+```json
+{
+  "client_name": "My App",
+  "redirect_uris": ["https://my-app.com/callback"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "token_endpoint_auth_method": "none"
+}
+```
+
+**`201`** returns a `client_id` (plus the echoed registration fields).
+
+## Authorization code flow
+
+1. **Authorize** — redirect the user to:
+
+   ```
+   GET /oauth/authorize
+     ?response_type=code
+     &client_id=<client_id>
+     &redirect_uri=<registered_uri>
+     &code_challenge=<pkce_challenge>
+     &code_challenge_method=S256
+     &state=<csrf_state>
+   ```
+
+   Vnytros renders a login screen (email/password or Google), then a consent
+   screen. On approval it redirects back to your `redirect_uri` with `?code=…&state=…`.
+
+2. **Token** — exchange the code (form-encoded):
+
+   ```
+   POST /oauth/token
+   Content-Type: application/x-www-form-urlencoded
+
+   grant_type=authorization_code
+   &code=<code>
+   &redirect_uri=<registered_uri>
+   &client_id=<client_id>
+   &code_verifier=<pkce_verifier>
+   ```
+
+   **`200`**
+   ```json
+   {
+     "access_token": "eyJhbGciOi…",
+     "token_type": "Bearer",
+     "expires_in": 900,
+     "refresh_token": "eyJhbGciOi…",
+     "scope": ""
+   }
+   ```
+
+3. **Refresh** — `grant_type=refresh_token&refresh_token=…&client_id=…`.
+
+## Supporting routes
+
+| Route | Purpose |
+| --- | --- |
+| `POST /oauth/login` | Submit credentials during the authorize flow |
+| `GET /oauth/authorize/google` | Start Google social login within the flow |
+| `GET /oauth/google/callback` | Google OAuth callback |
+| `GET /oauth/consent` | Consent screen |
+| `POST /oauth/decision` | Record the user's allow/deny decision |

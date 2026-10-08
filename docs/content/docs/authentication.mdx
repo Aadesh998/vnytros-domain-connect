@@ -1,0 +1,79 @@
+---
+title: Authentication
+description: The API uses two credential types — API keys for programmatic access and JWT access tokens for account/dashboard actions.
+---
+
+The Vnytros API accepts two kinds of credentials, both passed as a bearer token:
+
+```
+Authorization: Bearer <credential>
+```
+
+Which one you need depends on the endpoint.
+
+## API keys
+
+API keys identify your **account** and are meant for server-to-server calls —
+detecting, connecting, and verifying your customers' domains.
+
+- Create one with [`POST /v1/create/api`](/docs/api-keys) (or from your deployment's dashboard).
+- Each key can carry a `web_hook` URL that receives [domain lifecycle events](/docs/webhooks).
+- The plaintext key is returned **once** at creation. Store it securely.
+
+Used by the Domain Connect endpoints:
+
+| Endpoint | |
+| --- | --- |
+| `POST /v1/connect/direct` | [Direct connect](/docs/api/connect-direct) |
+| `POST /v1/connect/verify` | [Verify domain](/docs/api/verify-domain) |
+| `GET /v1/connect/domains` | [List domains](/docs/api/user-domains) |
+| `GET /v1/connect/domain` | [Get domain](/docs/api/user-domains) |
+
+```bash
+curl "https://api.example.com/v1/connect/domains" \
+  -H "Authorization: Bearer <api_key>"
+```
+
+## JWT access tokens
+
+Access tokens identify a **logged-in user** and are issued by the auth endpoints
+(`/v1/auth/login`, signup verification, or OAuth). They're what the dashboard
+uses.
+
+- Short-lived: the access token expires in **15 minutes** (`expires_in: 900`).
+- Refresh it with [`POST /v1/auth/refresh`](/docs/account) using the refresh token (valid ~7 days).
+- A token can also be passed as `?token=<jwt>` for endpoints that accept it.
+
+Used by account endpoints: [`/v1/me`](/docs/account), and the
+[API-key](/docs/api-keys) and [webhook](/docs/webhooks) management routes
+(which require the `user` or `admin` role).
+
+```bash
+curl "https://api.example.com/v1/me" \
+  -H "Authorization: Bearer <access_token>"
+```
+
+## Roles
+
+Role-protected endpoints allow `user` and `admin`. Any other role receives
+`403 FORBIDDEN`.
+
+## Public endpoints
+
+These need no credentials at all:
+
+- [`GET /v1/detect`](/docs/api/detect-provider)
+- [`GET /v1/dns/lookup`](/docs/api/dns-lookup)
+- [`POST /v1/status`](/docs/api/domain-status)
+- The [network tools](/docs/tools) under `/v1/tools/*`
+- The [Domain Connect protocol](/docs/protocol) `.well-known` routes.
+
+## Auth errors
+
+| Code | HTTP | Meaning |
+| --- | --- | --- |
+| `UNAUTHORIZED_TOKEN` | 401 | Missing / malformed / invalid bearer token |
+| `TOKEN_EXPIRED` | 401 | Access token expired — refresh and retry |
+| `INVALID_API_KEY` | 400 | API key not recognized |
+| `UNAUTHORIZED` | 401 | No authenticated principal in context |
+| `FORBIDDEN` | 403 | Role not allowed |

@@ -1,0 +1,57 @@
+# Optional, manual deploy to YOUR server over SSH. Nothing here points at any
+# particular host: it runs only when you trigger it (Actions -> deploy -> Run
+# workflow) and only with the secrets you configure in your fork:
+#
+#   DEPLOY_SSH_HOST         server address
+#   DEPLOY_SSH_USER         login user (the one that ran server-setup.sh)
+#   DEPLOY_SSH_KEY          private key authorised on the server
+#   DEPLOY_SSH_KNOWN_HOSTS  `ssh-keyscan -H <host>` output (pins the host key)
+#
+# The server builds from its own git clone of this repository, inside the
+# clone's server/ folder (server/deploy/scripts/deploy.sh). Setup guide:
+# server/deploy/README.md.
+name: deploy
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      # Only so the working directory exists; the build happens on the server.
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: server
+      - name: Deploy over SSH
+        env:
+          HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          USER: ${{ secrets.DEPLOY_SSH_USER }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          for v in HOST USER KEY KNOWN_HOSTS; do
+            if [ -z "$(printenv "$v")" ]; then
+              echo "::error::secret DEPLOY_SSH_$v is not set — see server/deploy/README.md"
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s\n' "$KEY" > /tmp/key
+          printf '%s\n' "$KNOWN_HOSTS" > /tmp/known_hosts
+          ssh -i /tmp/key \
+              -o StrictHostKeyChecking=yes \
+              -o UserKnownHostsFile=/tmp/known_hosts \
+              "$USER@$HOST" '~/scripts/deploy.sh'

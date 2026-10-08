@@ -1,0 +1,54 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  /*
+   * `name` MUST match the Worker the Cloudflare build pipeline deploys to
+   * (Workers & Pages → vnytros-frontend). OpenNext derives the
+   * WORKER_SELF_REFERENCE service binding from this field, so when it said
+   * "web" (the old package.json name, picked up by `wrangler deploy`'s
+   * interactive setup) while the deploy target was "vnytros-frontend", the
+   * Worker bound itself to a script that does not exist and the deploy failed
+   * with error 10143. Keep the two in sync.
+   *
+   * This is the Cloudflare Worker's name, not a repository name: the site now
+   * lives in the `website/` folder of the vnytros/vnytros monorepo, and
+   * renaming the Worker would create a new one in the Cloudflare account. If
+   * you deploy your own copy, change it here and in `services` below.
+   */
+  "name": "vnytros-frontend",
+  "main": ".open-next/worker.js",
+
+  "compatibility_date": "2026-09-03",
+  // nodejs_compat is required by the OpenNext runtime; global_fetch_strictly_public
+  // makes the Worker's own fetch() go back out through the edge rather than
+  // looping internally, which is what Next's self-referencing fetches expect.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "vnytros-frontend"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "web-opennext-cache"
+    }
+  ],
+
+  // Powers next/image on Workers.
+  "images": {
+    "binding": "IMAGES"
+  }
+}

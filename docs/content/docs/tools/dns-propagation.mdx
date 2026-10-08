@@ -1,0 +1,90 @@
+---
+title: "DNS Propagation"
+description: "Query a DNS record against 25 public resolvers worldwide and compare them against the authoritative answer."
+---
+
+```
+GET /v1/tools/dns/propagation
+```
+
+Query a DNS record against 25 public resolvers worldwide and compare them against the authoritative answer. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `dns_propagation`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Domain to check |
+| `type` | string | no | Record type: `A` (default), `AAAA`, `CNAME`, `MX`, `TXT`, `NS`, `SOA`, `CAA` |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/dns/propagation?domain=example.com"
+```
+
+## What it checks
+
+- Fans out the same query to 25 independent public resolvers concurrently.
+- Groups resolvers by the answer they returned, so disagreement is visible per resolver.
+- Queries the zone`s own nameservers directly, bypassing every cache, to establish the authoritative value.
+- Reports the TTL, which is how long stale caches may keep serving the old record.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `consistent` | pass | Every responding resolver returned the same answer. |
+| `authoritative` | info | What the zone`s nameservers currently return. |
+| `inconsistent` | info | Resolvers disagree — either a recent change still propagating or geographic load balancing. |
+| `load_balanced` | info | The authoritative servers themselves vary, so the difference is by design. |
+| `record_missing` | fail | No record of that type exists anywhere. |
+| `high_ttl` | warn | TTL above one day, which slows any future change. |
+| `unreachable` | info | Some resolvers timed out or refused the query. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "record_type": "A",
+  "queried": 25,
+  "responded": 20,
+  "consistent": true,
+  "groups": [
+    {
+      "id": 0,
+      "values": ["13.248.169.48", "76.223.54.146"],
+      "count": 20,
+      "resolvers": ["Google", "Cloudflare", "Quad9"],
+      "max_ttl": 3600
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Google",
+      "ip": "8.8.8.8",
+      "location": "Global (anycast)",
+      "country": "US",
+      "values": ["13.248.169.48", "76.223.54.146"],
+      "ttl": 3600,
+      "rcode": "NOERROR",
+      "latency_ms": 114,
+      "group_id": 0
+    }
+  ],
+  "authoritative": ["13.248.169.48", "76.223.54.146"],
+  "authoritative_varies": false
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

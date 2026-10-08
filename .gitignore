@@ -1,0 +1,45 @@
+# Root .gitignore for every folder of the monorepo (server/, dashboard/,
+# website/, docs/, sdk/). Per-folder .gitignore files only add rules that are
+# specific to that folder.
+
+# Dependencies and build output
+node_modules/
+dist/
+dist-ssr/
+.next/
+out/
+build/
+.open-next/
+.wrangler/
+.vercel/
+.source/
+bin/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+# npm pack output (sdk/)
+*.tgz
+
+# Logs
+*.log
+logs/
+
+# Env files: real values never get committed (.env.production included).
+# Only the placeholder templates are tracked.
+.env
+.env.*
+!.env.example
+*.local
+.dev.vars
+
+# Signing keys and other private material (server/: `make keys`)
+keys/
+*.pem
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.sw?
+.claude/settings.local.json

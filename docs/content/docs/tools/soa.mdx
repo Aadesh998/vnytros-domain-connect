@@ -1,0 +1,71 @@
+---
+title: "SOA & TTL"
+description: "Inspect the zone Start of Authority timers, negative caching TTL and the TTLs on live records."
+---
+
+```
+GET /v1/tools/dns/soa
+```
+
+Inspect the zone Start of Authority timers, negative caching TTL and the TTLs on live records. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `soa`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Zone apex to inspect |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/dns/soa?domain=example.com"
+```
+
+## What it checks
+
+- Reads refresh, retry, expire and the negative caching TTL, checking each against RFC 1912 and RFC 2308.
+- Verifies retry is shorter than refresh.
+- Classifies the serial number format and flags future-dated or zero serials.
+- Sweeps TTLs on A, AAAA, MX, TXT and NS records.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `refresh` / `retry` / `expire` | pass/warn | Each timer against its recommended range. |
+| `retry_ge_refresh` | fail | Retry is not shorter than refresh. |
+| `negative_ttl` | pass | Negative caching within one to three hours. |
+| `negttl_high` | fail | Non-existent records cached over a day. |
+| `serial_format` | pass/warn | Serial number scheme. |
+| `hidden_primary` | info | SOA primary is not in the published NS set. |
+| `ttl_<type>` | warn | A record TTL over two days. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "zone": "example.com",
+  "primary_ns": "ns1.example.net",
+  "hostmaster": "dns@example.com",
+  "serial": 2026081501,
+  "serial_style": "date-based (YYYYMMDDnn)",
+  "refresh": 28800,
+  "retry": 7200,
+  "expire": 604800,
+  "negative_ttl": 3600,
+  "record_ttls": { "A": 3600, "MX": 3600, "NS": 86400 }
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

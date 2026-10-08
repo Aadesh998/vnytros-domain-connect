@@ -1,0 +1,72 @@
+---
+title: "HTTP Security Headers"
+description: "Grade a page HTTP security headers, parsing the Content-Security-Policy for real weaknesses."
+---
+
+```
+GET /v1/tools/http/headers
+```
+
+Grade a page HTTP security headers, parsing the Content-Security-Policy for real weaknesses. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `security_headers`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `url` | string | yes | URL to fetch. A bare hostname is treated as `https://` |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/http/headers?url=https://example.com"
+```
+
+## What it checks
+
+- Follows redirects to the page visitors actually land on, then grades the headers there.
+- Parses the CSP directive by directive rather than checking the header exists.
+- Flags `unsafe-inline`, `unsafe-eval`, bare wildcards and missing `default-src`, `object-src` and `base-uri`.
+- Checks HSTS max-age and preload eligibility, frame protection, nosniff, referrer and permissions policy.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `hsts` | pass | HSTS set with an adequate max-age. |
+| `no_hsts` | fail | Strict-Transport-Security is absent. |
+| `csp` | pass | A CSP with no obvious weaknesses. |
+| `csp_weak` | warn | A CSP is present but weakened. |
+| `no_csp` | fail | No Content-Security-Policy at all. |
+| `clickjacking` | pass | Framing restricted. |
+| `no_frame_protection` / `no_nosniff` | warn | Missing baseline headers. |
+| `version_disclosure` | warn | Response headers reveal software versions. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "url": "https://example.com",
+  "final_url": "https://example.com",
+  "status_code": 200,
+  "headers": {
+    "strict-transport-security": "max-age=31536000; includeSubDomains"
+  },
+  "present": ["strict-transport-security"],
+  "missing": ["content-security-policy", "x-frame-options"],
+  "hsts_max_age": 31536000,
+  "hsts_preload_ready": false
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `url` is missing, or not a usable URL |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

@@ -1,0 +1,65 @@
+---
+title: Domain Connect Protocol
+description: The .well-known endpoints Vnytros serves as a Domain Connect service provider.
+---
+
+Vnytros acts as a [Domain Connect](https://www.domainconnect.org/) **service
+provider**. The `providerId` is your deployment's own domain, set with
+`DC_PROVIDER_DOMAIN` (`example.com` below). These endpoints implement the protocol's
+discovery and template contract. They're public and rarely called directly by
+integrators.
+
+The Vnytros `custom-domain` template is merged upstream in the official
+[Domain-Connect/Templates](https://github.com/Domain-Connect/Templates)
+repository — pull requests
+[#1064](https://github.com/Domain-Connect/Templates/pull/1064) and
+[#1166](https://github.com/Domain-Connect/Templates/pull/1166). The
+[`server/`](https://github.com/vnytros/vnytros/tree/main/server) folder of the Vnytros repository ships a
+copy at `templates/vnytros.dev.custom-domain.json`.
+
+<Callout>
+Vnytros does **not** run the Domain Connect apply flow (redirecting a customer
+to their DNS provider to approve a template); the server serves only the
+discovery, template, and public-key endpoints below. To write records, use
+[Direct Connect](/docs/api/connect-direct).
+</Callout>
+
+## Discovery
+
+```
+GET /.well-known/domainconnect
+```
+
+Returns the service-provider discovery document:
+
+```json
+{
+  "providerId": "example.com",
+  "providerName": "Vnytros",
+  "serviceId": "custom-domain",
+  "urlAPI": "https://api.example.com",
+  "width": 750,
+  "height": 750,
+  "object": false
+}
+```
+
+## Service template
+
+```
+GET /.well-known/domainconnect/<providerId>/custom-domain
+```
+
+Returns the Domain Connect template (the record set Vnytros applies for the
+`custom-domain` service).
+
+## Signing public key
+
+```
+GET /_domainconnect/_dckeypubv1.public
+```
+
+Returns the PEM-encoded RSA public key (`Content-Type: application/x-pem-file`)
+used to verify Domain Connect request signatures. A self-hosted server serves
+the public half of the keypair it was started with — see
+[Self-hosting](/docs/self-hosting#2-generate-the-signing-keypair).

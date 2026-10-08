@@ -1,0 +1,91 @@
+---
+title: "SSL/TLS Certificate"
+description: "Inspect a certificate chain, expiry, hostname coverage, key strength and supported TLS versions."
+---
+
+```
+GET /v1/tools/tls/certificate
+```
+
+Inspect a certificate chain, expiry, hostname coverage, key strength and supported TLS versions. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `tls_certificate`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Hostname to connect to |
+| `port` | integer | no | TCP port, default `443` |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/tls/certificate?domain=example.com"
+```
+
+## What it checks
+
+- Handshakes once with verification disabled so an invalid certificate can still be inspected and explained.
+- Verifies separately against the system trust store using only the certificates the server actually sent.
+- Detects a missing intermediate — the fault browsers hide by fetching it, but Android, Java and curl reject.
+- Opens one connection per TLS version to determine exactly which the server accepts.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `expiry` | pass | Certificate is current. |
+| `expired` / `expiring_urgent` / `expiring_soon` | fail/warn | Expiry thresholds at 0, 7 and 30 days. |
+| `hostname` | pass | The hostname appears in the certificate. |
+| `hostname_mismatch` | fail | The certificate does not cover the requested name. |
+| `chain` | pass | Full chain sent and validates to a trusted root. |
+| `incomplete_chain` | fail | Only the leaf was sent; the intermediate is missing. |
+| `self_signed` | fail | Signed by itself rather than a CA. |
+| `weak_key` / `weak_signature` | fail | RSA under 2048-bit, or a SHA-1 signature. |
+| `legacy_tls` | fail | TLS 1.0 or 1.1 still accepted. |
+| `no_tls13` / `no_ocsp_stapling` | warn | Modern features not enabled. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "host": "example.com",
+  "port": 443,
+  "resolved_ip": "203.0.113.5",
+  "chain": [
+    {
+      "subject": "example.com",
+      "issuer": "R11",
+      "not_before": "2026-05-05T06:56:37Z",
+      "not_after": "2026-11-19T06:56:37Z",
+      "is_ca": false,
+      "key_type": "RSA",
+      "key_bits": 2048,
+      "signature_algorithm": "SHA256-RSA",
+      "sans": ["example.com", "www.example.com"]
+    }
+  ],
+  "chain_complete": true,
+  "trusted": true,
+  "hostname_matches": true,
+  "days_to_expiry": 95,
+  "negotiated_version": "TLS 1.3",
+  "cipher_suite": "TLS_AES_128_GCM_SHA256",
+  "supported_protocols": ["TLS 1.2", "TLS 1.3"],
+  "ocsp_stapled": true,
+  "sct_count": 2,
+  "handshake_ms": 88
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

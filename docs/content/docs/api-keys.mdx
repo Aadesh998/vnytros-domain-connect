@@ -1,0 +1,90 @@
+---
+title: API Keys
+description: Create, list, update, and delete the API keys that authenticate programmatic access.
+---
+
+API keys authenticate the [Domain Connect endpoints](/docs/authentication#api-keys).
+Managing keys requires a [JWT access token](/docs/authentication#jwt-access-tokens)
+(`user` or `admin` role).
+
+## Create a key
+
+```
+POST /v1/create/api
+```
+
+```json
+{ "web_hook": "https://your-app.com/webhooks/vnytros" }
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `web_hook` | string | yes | URL that receives [domain events](/docs/webhooks) |
+
+**`200`**
+```json
+{ "message": "dc_live_3f9a8b2c4d5e6f7a8b9c0d1e2f3a4b5c" }
+```
+
+<Callout type="warn">
+`message` is the plaintext key, shown **once**. Store it now — it can't be retrieved later.
+</Callout>
+
+## List keys
+
+```
+GET /v1/get/apis
+```
+
+[Cursor-paginated](/docs/pagination). Supports `cursor` and `limit`.
+
+**`200`**
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "api_key": "dc_live_••••••••",
+      "web_hook": "https://your-app.com/webhooks/vnytros",
+      "user_id": 1,
+      "status": "active",
+      "domain_count": 5
+    }
+  ],
+  "next_cursor": 2,
+  "limit": 20,
+  "has_more": false
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | string | `active`, `disable`, or `cancelled` |
+| `domain_count` | integer | Informational counter on the key. Nothing is gated on it |
+
+## Update a key
+
+```
+PATCH /v1/update/api?id=<id>
+```
+
+Send at least one of:
+
+```json
+{ "web_hook": "https://new-url.com/hook", "status": "disable" }
+```
+
+Errors: `INVALID_INPUT` (missing `id` or empty body), `NOT_FOUND` (404).
+
+## Delete a key
+
+```
+DELETE /v1/delete/api?id=<id>
+```
+
+**`200`**
+```json
+{ "message": "API key deleted successfully" }
+```
+
+Errors: `INVALID_INPUT` (missing `id`), `NOT_FOUND` (404).

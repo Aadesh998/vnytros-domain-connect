@@ -1,0 +1,98 @@
+---
+title: "DKIM Keys"
+description: "Discover a domain's DKIM selectors and validate each published key: algorithm, length, revocation and testing mode."
+---
+
+```
+GET /v1/tools/email/dkim
+```
+
+Discover a domain's DKIM keys and validate each one. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `dkim`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Domain to check |
+| `selector` | string | no | Comma-separated selectors to check directly. Omitted, 54 provider selectors are probed |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/email/dkim?domain=example.com"
+
+# When you know the selector
+curl "https://api.example.com/v1/tools/email/dkim?domain=example.com&selector=google,selector1"
+```
+
+## Selector discovery
+
+A DKIM selector is an arbitrary label chosen by whoever signs the mail, and DNS offers no way to enumerate the names under `_domainkey`. With no `selector` parameter the endpoint probes the 54 selectors the major providers use, in parallel. A key published under a private selector will not be found — which is why a miss is reported as `not_discovered` rather than as an absence of DKIM.
+
+The `*._domainkey` wildcard is read first. A domain may publish a revoked key there to declare under RFC 6376 that it signs nothing; without reading it, every probed selector would answer with that same record and appear as a revoked selector that does not exist.
+
+## What it checks
+
+- Decodes the `p=` tag and parses the public key, accepting both SubjectPublicKeyInfo and the bare PKCS#1 form that some providers publish.
+- Reports RSA key length against RFC 8301: below 1024 bits is invalid, 1024 is the accepted minimum, 2048 the recommendation. Ed25519 keys are recognised.
+- Detects revoked keys (empty `p=`), the `t=y` testing flag and the `t=s` strict-SDID flag.
+- Flags key material that is not valid base64 or not a well-formed DER key — usually a record truncated or re-wrapped when pasted into a DNS editor.
+
+## Findings
+
+Findings that concern one selector carry its name in the id, so they stay stable across runs and diffs.
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `key_<selector>` | pass | A valid key is published. |
+| `weak_key_<selector>` | fail | Below 1024 bits — conforming verifiers reject every signature. |
+| `key_1024_<selector>` | warn | 1024 bits: accepted, but below the recommendation. |
+| `revoked_<selector>` | warn | Empty `p=`, withdrawing the key. |
+| `invalid_<selector>` | fail | The record could not be parsed as a key. |
+| `testing_<selector>` | warn | `t=y` tells receivers to ignore signature failures. |
+| `no_usable_key` | fail | Every selector found is revoked or malformed. |
+| `not_discovered` | warn | No key at any probed selector. |
+| `selector_missing` | fail | No key at a selector you named explicitly. |
+| `wildcard_deny` | pass | `*._domainkey` publishes a revoked key: the domain declares it signs nothing. |
+| `wildcard_key` | warn | A live key on the wildcard, so every selector name resolves to one key. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "domain": "example.com",
+  "discovered": true,
+  "selectors_probed": 54,
+  "wildcard_deny": false,
+  "keys": [
+    {
+      "selector": "google",
+      "name": "google._domainkey.example.com",
+      "provider": "Google Workspace",
+      "record": "v=DKIM1; k=rsa; p=MIIBIjANBgkq...",
+      "version": "DKIM1",
+      "key_type": "rsa",
+      "key_bits": 2048,
+      "testing": false,
+      "strict_sdid": false,
+      "revoked": false,
+      "valid": true
+    }
+  ]
+}
+```
+
+When `selector` was supplied, the names appear in `requested_selectors`.
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custom Domain Playground</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --panel: #ffffff; --ink: #17171a; --muted: #5d5d66; --line: #e4e4e0;
+    --accent: #f38020; --accent-ink: #ffffff; --ok: #138a4b; --ok-bg: #e7f6ee; --warn: #9a6400; --warn-bg: #fdf3e1;
+    --bad: #b42318; --bad-bg: #fdecea; --code: #f1f1ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101012; --panel: #18181b; --ink: #f4f4f5; --muted: #a1a1aa; --line: #2a2a2f;
+      --ok: #4ade80; --ok-bg: #12301f; --warn: #fbbf24; --warn-bg: #33270d; --bad: #f87171; --bad-bg: #3a1414; --code: #222226;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 80px; }
+  header h1 { font-size: 26px; letter-spacing: -0.02em; margin: 0 0 6px; }
+  header p { margin: 0 0 28px; color: var(--muted); }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  section[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+  h2 { font-size: 15px; margin: 0 0 12px; display: flex; gap: 10px; align-items: center; }
+  h2 .n { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--panel); display: inline-grid; place-items: center; font-size: 12px; }
+  form.row, .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  input { flex: 1 1 220px; min-width: 0; font: inherit; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  button { font: inherit; font-weight: 600; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  button:disabled { opacity: .55; cursor: progress; }
+  .meta { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 14px; margin-top: 14px; }
+  .meta dt { color: var(--muted); }
+  .meta dd { margin: 0; overflow-wrap: anywhere; }
+  .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 12px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  td code, .mono { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+  .scroll { overflow-x: auto; }
+  .msg { margin: 12px 0 0; font-size: 14px; }
+  .msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); } .msg.muted { color: var(--muted); }
+  details { margin-top: 8px; } summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+  pre { background: var(--code); padding: 14px; border-radius: 8px; overflow-x: auto; font: 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .current { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Custom Domain Playground</h1>
+    <p>Point a domain you own at a service. Type the domain, add the records at your DNS host, and watch them go live.</p>
+  </header>
+
+  <section id="s1">
+    <h2><span class="n">1</span> Your domain</h2>
+    <form class="row" id="detect-form">
+      <input id="domain" name="domain" placeholder="example.com" autocomplete="off" spellcheck="false" required>
+      <button class="primary" id="detect-btn">Check domain</button>
+    </form>
+    <div id="detect-out"></div>
+  </section>
+
+  <section id="s2" aria-disabled="true">
+    <h2><span class="n">2</span> Records to add</h2>
+    <div class="row">
+      <div style="flex:1 1 220px"><label for="ip">A record for <span class="mono">@</span> (IPv4)</label><input id="ip" placeholder="203.0.113.10" spellcheck="false"></div>
+      <div style="flex:1 1 220px"><label for="target">CNAME for <span class="mono">www</span></label><input id="target" placeholder="cname.yourapp.com" spellcheck="false"></div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Type</th><th>Host</th><th>Value</th><th>Now</th></tr></thead>
+        <tbody id="plan"></tbody>
+      </table>
+    </div>
+    <p class="msg muted">Add these records at your DNS host, then start checking.</p>
+    <div class="row">
+      <button class="primary" id="check-btn">I've added them, check now</button>
+    </div>
+  </section>
+
+  <section id="s3" aria-disabled="true">
+    <h2><span class="n">3</span> Live verification</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Type</th><th>Host</th><th>Expected</th><th>Status</th></tr></thead>
+        <tbody id="verify"></tbody>
+      </table>
+    </div>
+    <p class="msg muted" id="verify-msg"></p>
+  </section>
+
+  <details>
+    <summary>How this page is built</summary>
+<pre>// Server: holds the API key
+const vny = new Vnytros({
+  apiKey: process.env.VNYTROS_API_KEY,
+  baseUrl: process.env.VNYTROS_BASE_URL, // your own deployment
+});
+app.get("/api/detect", async (req, res) =&gt; {
+  res.json(await vny.detect(req.query.domain));
+});
+app.post("/api/status", async (req, res) =&gt; {
+  // { domain, ip, target, txt } -&gt; is_configured + per-record status
+  res.json(await vny.domains.status(req.body));
+});</pre>
+  </details>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { domain: "", provider: null, records: [], txt: "vnytros-verify=" + Math.random().toString(36).slice(2, 14), pollTimer: 0 };
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function enable(id, on) { $(id).setAttribute("aria-disabled", on ? "false" : "true"); }
+  function msg(id, text, kind) { var el = $(id); el.textContent = text; el.className = "msg " + (kind || "muted"); }
+
+  async function api(path, body) {
+    var res = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : undefined);
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.message || "Request failed (" + res.status + ")");
+    return data;
+  }
+
+  fetch("/api/config").then(function (r) { return r.json(); }).then(function (cfg) {
+    if (cfg.ip) $("ip").value = cfg.ip;
+    if (cfg.target) $("target").value = cfg.target;
+    renderPlan();
+  });
+
+  function current(type) {
+    var set = state.records.find(function (r) { return r.type === type; });
+    return set && set.values && set.values.length ? set.values.join(", ") : "—";
+  }
+
+  function renderPlan() {
+    var rows = [];
+    var ip = $("ip").value.trim(), target = $("target").value.trim();
+    if (ip) rows.push(["A", "@", ip, current("A")]);
+    if (target) rows.push(["CNAME", "www", target, "—"]);
+    rows.push(["TXT", "@", state.txt, current("TXT")]);
+    $("plan").innerHTML = rows.map(function (r) {
+      return "<tr><td>" + r[0] + "</td><td class=mono>" + esc(r[1]) + "</td><td><code>" + esc(r[2]) + "</code></td><td class=current>" + esc(r[3]) + "</td></tr>";
+    }).join("");
+  }
+  $("ip").addEventListener("input", renderPlan);
+  $("target").addEventListener("input", renderPlan);
+
+  $("detect-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    stopPolling();
+    ["s2", "s3"].forEach(function (id) { enable(id, false); });
+    var btn = $("detect-btn"); btn.disabled = true;
+    $("detect-out").innerHTML = '<p class="msg muted">Looking up nameservers…</p>';
+    try {
+      var d = await api("/api/detect?domain=" + encodeURIComponent($("domain").value));
+      state.domain = d.domain; state.provider = d.provider; state.records = d.records || [];
+      var p = d.provider;
+      $("detect-out").innerHTML =
+        '<dl class="meta"><dt>Domain</dt><dd class=mono>' + esc(d.domain) + "</dd>" +
+        "<dt>DNS provider</dt><dd>" + esc(p ? p.name : "Not recognised") + "</dd>" +
+        "<dt>Nameservers</dt><dd class=mono>" + esc((d.nameservers || []).join(", ")) + "</dd></dl>";
+      renderPlan();
+      enable("s2", true);
+    } catch (err) {
+      $("detect-out").innerHTML = '<p class="msg bad">' + esc(err.message) + "</p>";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $("check-btn").addEventListener("click", function () {
+    startPolling({ domain: state.domain, ip: $("ip").value.trim(), target: $("target").value.trim() });
+  });
+
+  var POLL_MS = 4000, POLL_FOR_MS = 5 * 60 * 1000;
+
+  function stopPolling() { clearTimeout(state.pollTimer); state.pollTimer = 0; }
+
+  function startPolling(params) {
+    stopPolling();
+    enable("s3", true);
+    var started = Date.now();
+    var body = { domain: params.domain, ip: params.ip, target: params.target, txt: state.txt };
+
+    async function tick() {
+      try {
+        var s = await api("/api/status", body);
+        $("verify").innerHTML = s.records.map(function (r) {
+          var cur = r.current && r.current.length ? r.current.join(", ") : "nothing yet";
+          return "<tr><td>" + esc(r.type) + "</td><td class=mono>" + esc(r.host) + "</td><td><code>" + esc(r.expected) +
+            "</code><div class=current>now: " + esc(cur) + "</div></td><td>" +
+            (r.status ? '<span class="pill ok">Live</span>' : '<span class="pill warn">Waiting</span>') + "</td></tr>";
+        }).join("");
+        if (s.is_configured) {
+          msg("verify-msg", params.domain + " is connected. Every record resolves.", "ok");
+          return;
+        }
+        if (Date.now() - started > POLL_FOR_MS) {
+          msg("verify-msg", "Still propagating. DNS can take longer; check back with “Check domain” in a few minutes.", "muted");
+          return;
+        }
+        msg("verify-msg", "Waiting for DNS to propagate… checked " + new Date().toLocaleTimeString());
+      } catch (err) {
+        msg("verify-msg", err.message, "bad");
+      }
+      state.pollTimer = setTimeout(tick, POLL_MS);
+    }
+    tick();
+  }
+})();
+</script>
+</body>
+</html>

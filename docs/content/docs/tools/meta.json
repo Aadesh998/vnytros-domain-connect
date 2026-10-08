@@ -1,0 +1,21 @@
+{
+  "title": "Network Tools",
+  "pages": [
+    "index",
+    "dns-propagation",
+    "nameservers",
+    "cname-chain",
+    "caa",
+    "soa",
+    "dnssec",
+    "email-auth",
+    "spf",
+    "dkim",
+    "dmarc",
+    "domain-info",
+    "tls-certificate",
+    "security-headers",
+    "redirects",
+    "ip-info"
+  ]
+}

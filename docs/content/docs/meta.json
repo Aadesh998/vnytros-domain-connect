@@ -1,0 +1,21 @@
+{
+  "title": "Vnytros API",
+  "root": true,
+  "pages": [
+    "index",
+    "quickstart",
+    "authentication",
+    "errors",
+    "pagination",
+    "---API Reference---",
+    "api",
+    "tools",
+    "account",
+    "api-keys",
+    "webhooks",
+    "oauth",
+    "protocol",
+    "---Open Source---",
+    "self-hosting"
+  ]
+}

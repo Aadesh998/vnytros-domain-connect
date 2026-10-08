@@ -1,0 +1,11 @@
+{
+  "title": "Domains & DNS",
+  "pages": [
+    "detect-provider",
+    "dns-lookup",
+    "domain-status",
+    "connect-direct",
+    "verify-domain",
+    "user-domains"
+  ]
+}

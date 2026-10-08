@@ -1,0 +1,126 @@
+# Everything on the box that isn't a Go binary: the broker plus the
+# observability stack. Start it with:
+#
+#   cd ~/deploy && docker compose -f docker-compose.infra.yaml up -d
+#
+# No credentials live in this file. Docker Compose reads them from ~/deploy/.env
+# (copy infra.env.example to .env and fill it in); a missing required value
+# stops `up` with an error naming it.
+#
+# Postgres is NOT here — run it wherever you like (managed or another host) and
+# point DB_* in the app's env file at it.
+#
+# Every port is bound to 127.0.0.1. The Go services reach these over loopback,
+# and Grafana is exposed (if at all) through the reverse proxy — never by
+# publishing 3000 to the world.
+name: vnytros-infra
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    restart: unless-stopped
+    environment:
+      # These must stay identical to the credentials inside the RABITMQ URL in
+      # the app's env file — a mismatch means the worker cannot connect and
+      # campaigns stop draining with no error at the API layer.
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-vnytros}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?set RABBITMQ_DEFAULT_PASS in ~/deploy/.env}
+    ports:
+      - "127.0.0.1:5672:5672"     # AMQP
+      - "127.0.0.1:15672:15672"   # management UI
+      - "127.0.0.1:15692:15692"   # prometheus metrics (rabbitmq_prometheus)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.140.1
+    restart: unless-stopped
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./observability/otel-collector.yaml:/etc/otel/config.yaml:ro
+    ports:
+      # mailforge's tracer exports here (OTEL_ENDPOINT, default localhost:4318).
+      - "127.0.0.1:4318:4318"     # OTLP/HTTP
+      - "127.0.0.1:4317:4317"     # OTLP/gRPC
+      - "127.0.0.1:8889:8889"     # span-derived metrics, for Prometheus
+    depends_on:
+      - tempo
+
+  tempo:
+    image: grafana/tempo:2.9.1
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    user: "0:0"   # tempo needs to own its data dir
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "127.0.0.1:3200:3200"
+
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    restart: unless-stopped
+    # HOST NETWORK, deliberately. The three Go services run under systemd on the
+    # host and bind 127.0.0.1; a bridged container cannot reach that, and the
+    # usual host-gateway workaround depends on the host firewall allowing
+    # bridge->host traffic (it often does not). On the host network every target
+    # — the Go services and the other containers' published loopback ports — is
+    # simply localhost, and the app's /metrics can stay bound to loopback.
+    network_mode: host
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-remote-write-receiver"
+      # Host network means no port publishing to constrain this, so bind
+      # explicitly rather than serving on every interface.
+      - "--web.listen-address=127.0.0.1:9090"
+    volumes:
+      - ./observability/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+  node-exporter:
+    image: prom/node-exporter:v1.10.1
+    restart: unless-stopped
+    command:
+      - "--path.rootfs=/host"
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "127.0.0.1:9100:9100"
+
+  grafana:
+    image: grafana/grafana:12.3.1
+    restart: unless-stopped
+    # Also host network, so its datasources can be plain localhost URLs
+    # pointing at Prometheus (host-networked) and Tempo (published loopback).
+    network_mode: host
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in ~/deploy/.env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # The public URL Grafana is reached at, e.g. https://grafana.example.com.
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+      # Bind loopback explicitly; host network offers no port mapping to do it.
+      GF_SERVER_HTTP_ADDR: 127.0.0.1
+    volumes:
+      # Datasources, dashboard provider and alert rules.
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      # The dashboard JSON the provider above reads. Kept outside
+      # /var/lib/grafana because that path is the grafana_data volume.
+      - ./observability/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - tempo
+
+volumes:
+  rabbitmq_data:
+  tempo_data:
+  prometheus_data:
+  grafana_data:

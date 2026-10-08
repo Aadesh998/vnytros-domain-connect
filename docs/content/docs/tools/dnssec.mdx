@@ -1,0 +1,95 @@
+---
+title: "DNSSEC"
+description: "Validate the DNSSEC chain from the parent DS record through the zone keys to the signatures."
+---
+
+```
+GET /v1/tools/dns/dnssec
+```
+
+Validate the DNSSEC chain from the parent DS record through the zone keys to the signatures. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `dnssec`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Zone to validate |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/dns/dnssec?domain=example.com"
+```
+
+## What it checks
+
+- Fetches the DS record from the parent and the DNSKEY set from the zone, then computes whether they match.
+- Verifies RRSIG signatures against the published keys and reports their expiry.
+- Cross-checks the verdict against a validating resolver via the authenticated-data flag.
+- Detects the half-configured states that break resolution for validating resolvers only.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `not_signed` | warn | The zone does not use DNSSEC. |
+| `ds_match` | pass | The chain of trust is intact. |
+| `ds_mismatch` | fail | The parent DS does not match any zone key — an outage for validating resolvers. |
+| `ds_without_key` | fail | A DS exists but the zone publishes no DNSKEY. |
+| `key_without_ds` | warn | The zone is signed but the parent has no DS record. |
+| `sig_expired` | fail | Signatures have expired. |
+| `sig_short_lived` | info | Short validity window, normal for some providers. |
+| `resolver_validates` | pass | A validating resolver accepts the zone. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "zone": "example.com",
+  "signed": true,
+  "parent_has_ds": true,
+  "chain_valid": true,
+  "resolver_validates": true,
+  "keys": [
+    {
+      "key_tag": 2371,
+      "flags": 257,
+      "algorithm": "ECDSAP256SHA256",
+      "role": "KSK (key-signing key)",
+      "bits": 256
+    }
+  ],
+  "ds": [
+    {
+      "key_tag": 2371,
+      "algorithm": "ECDSAP256SHA256",
+      "digest_type": "SHA256",
+      "digest": "32996839A6D8...",
+      "matched": true
+    }
+  ],
+  "signatures": [
+    {
+      "covers": "SOA",
+      "key_tag": 34505,
+      "algorithm": "ECDSAP256SHA256",
+      "expires": "2026-08-23T19:11:41Z",
+      "days_left": 7,
+      "valid": true
+    }
+  ]
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

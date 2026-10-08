@@ -1,0 +1,409 @@
+/*
+ * vnytros design tokens
+ *
+ * ARCHITECTURE — read this before adding a color.
+ *
+ * Every palette value is defined TWICE as a raw `--vn-*` variable: once under
+ * `:root` (light) and once under `.dark`. The `@theme inline` block then maps
+ * `--color-vn-* -> var(--vn-*)`, which is what generates the Tailwind
+ * utilities (`bg-vn-bg`, `text-vn-text-2`, `border-vn-hairline`, ...).
+ *
+ * `inline` is load-bearing. It makes Tailwind emit the *reference*
+ * `var(--vn-bg)` into each utility rather than a frozen copy of the value, so
+ * a single class like `bg-vn-bg` resolves differently depending on whether
+ * `.dark` is on <html>. Drop `inline` and light mode silently stops working.
+ *
+ * Consequence: NEVER hardcode a hex or rgba() in a component. A literal cannot
+ * flip, and it will look correct in exactly one of the two themes.
+ *
+ * Token names are identical across both themes and describe ROLE, not
+ * appearance — `--vn-text-3` is "third-tier text", not "grey". In light mode
+ * the surface ramp gets darker as it goes up; in dark mode it gets lighter.
+ * Both directions read as "further from the canvas".
+ */
+
+/* Matches <html class="dark">. `:where()` keeps specificity at 0 and, unlike
+ * `.dark *`, also matches the <html> element itself. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─────────────────────────────────────────────────────────────
+   LIGHT  (default)
+───────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  /* ── base canvas ───────────────────────────────────────── */
+  --vn-bg: #ffffff;
+  --vn-bg-2: #fafafa;
+
+  /* ── surface ramp — darkens as it elevates ─────────────── */
+  --vn-surface: #ffffff;
+  --vn-surface-2: #f7f7f8;
+  --vn-surface-3: #efeff1;
+
+  /* ── borders / separators ──────────────────────────────── */
+  --vn-hairline: rgba(9, 9, 11, 0.07);
+  --vn-hairline-2: rgba(9, 9, 11, 0.11);
+  --vn-hairline-3: rgba(9, 9, 11, 0.18);
+
+  /* ── text ramp ─────────────────────────────────────────────
+   * Every tier clears WCAG AA (4.5:1) for normal-size text against
+   * every background in the surface ramp, including the darkest
+   * (`--vn-surface-3`). See the note on the dark ramp below for how
+   * these were derived — the two themes are mirror images.
+   *
+   * Worst-case ratios: 17.3 / 8.5 / 6.3 / 4.7
+   * Perceptual steps (CIE L*): 26, 8, 8
+   * ───────────────────────────────────────────────────────── */
+  --vn-text: #09090b;
+  --vn-text-2: #43434b;
+  --vn-text-3: #565663;
+  --vn-text-4: #696979;
+
+  /* ── indigo accent — darkened vs dark mode so it clears
+   *    4.5:1 against a white canvas ───────────────────────── */
+  --vn-accent: #5b4bf5;
+  --vn-accent-2: #4936e8;
+  --vn-accent-soft: rgba(91, 75, 245, 0.09);
+  --vn-accent-soft-2: rgba(91, 75, 245, 0.05);
+  --vn-accent-glow: rgba(91, 75, 245, 0.24);
+  /* Text/icons that sit ON the accent fill. */
+  --vn-on-accent: #ffffff;
+
+  /* ── cyan support accent ───────────────────────────────── */
+  --vn-cyan: #0e7490;
+  --vn-cyan-soft: rgba(14, 116, 144, 0.1);
+
+  /* ── semantic ──────────────────────────────────────────────
+   * These are used as TEXT, not only as fills — a "Save 20%" pill, a
+   * count in a tinted pill, a status label. So each has to clear 4.5:1
+   * against the hardest background it lands on, which is its OWN soft
+   * tint over white, not plain white: `--vn-success` on
+   * `--vn-success-soft` measured 4.23:1 and `--vn-warn` on
+   * `--vn-warn-soft` 4.47:1.
+   *
+   * Both are darkened just past the floor. The shift is a couple of
+   * percent of lightness — same hue, same saturation.
+   *
+   * The dark-theme equivalents were checked against the same set and
+   * clear it comfortably (5.6:1 to 8.2:1); they are unchanged.
+   * ───────────────────────────────────────────────────────── */
+  --vn-success: #057c46;
+  --vn-success-soft: rgba(5, 131, 74, 0.1);
+  --vn-warn: #a05a00;
+  --vn-warn-soft: rgba(164, 92, 0, 0.1);
+  /* Already 5.17:1 on its own tint — left alone. */
+  --vn-danger: #c2183c;
+  --vn-danger-soft: rgba(194, 24, 60, 0.09);
+
+
+  /* ── gradients ─────────────────────────────────────────── */
+  --vn-gradient-accent: linear-gradient(135deg, #5b4bf5 0%, #0e7490 100%);
+  --vn-gradient-surface: linear-gradient(
+    180deg,
+    rgba(9, 9, 11, 0.025) 0%,
+    rgba(9, 9, 11, 0) 100%
+  );
+  --vn-gradient-card: linear-gradient(
+    180deg,
+    rgba(9, 9, 11, 0.02) 0%,
+    rgba(9, 9, 11, 0.005) 100%
+  );
+
+  /* ── glass (navbar, overlays) ──────────────────────────── */
+  --vn-glass: rgba(255, 255, 255, 0.72);
+  --vn-glass-border: rgba(9, 9, 11, 0.08);
+
+  /* ── shadows — real depth on light, driven by black ────── */
+  --vn-shadow-soft: 0 1px 2px rgba(9, 9, 11, 0.05),
+    0 4px 16px rgba(9, 9, 11, 0.05);
+  --vn-shadow-elevated: 0 2px 4px rgba(9, 9, 11, 0.05),
+    0 12px 36px rgba(9, 9, 11, 0.1);
+  --vn-shadow-glow: 0 0 0 1px rgba(91, 75, 245, 0.12),
+    0 6px 20px rgba(91, 75, 245, 0.16);
+  --vn-shadow-glow-strong: 0 0 0 1px rgba(91, 75, 245, 0.18),
+    0 10px 32px rgba(91, 75, 245, 0.24);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DARK
+───────────────────────────────────────────────────────────── */
+
+.dark {
+  color-scheme: dark;
+
+  /* ── base canvas ───────────────────────────────────────── */
+  --vn-bg: #08090b;
+  --vn-bg-2: #0d0f13;
+
+  /* ── surface ramp — lightens as it elevates ────────────── */
+  --vn-surface: #111318;
+  --vn-surface-2: #171a20;
+  --vn-surface-3: #1e222a;
+
+  /* ── borders / separators ──────────────────────────────── */
+  --vn-hairline: rgba(255, 255, 255, 0.06);
+  --vn-hairline-2: rgba(255, 255, 255, 0.1);
+  --vn-hairline-3: rgba(255, 255, 255, 0.16);
+
+  /* ── text ramp ─────────────────────────────────────────────
+   * WHY THESE VALUES, and why you should not darken them back.
+   *
+   * The ramp used to be #f7f8fa / #b4bac6 / #7e8593 / #4e5563. The
+   * bottom two tiers failed WCAG AA for normal-size text against every
+   * surface in the ramp — `--vn-text-4` measured 2.13:1 to 2.66:1, and
+   * `--vn-text-3` failed against `--vn-surface-3` and every semantic
+   * soft tint. An audit flagged 29 failing nodes on /providers alone,
+   * where the nameserver patterns are 10px `--vn-text-4`.
+   *
+   * How the replacements were derived, so the ramp can be extended
+   * consistently:
+   *
+   *   1. `--vn-text-4` is pinned just above the 4.5:1 floor against the
+   *      LIGHTEST background it appears on (`--vn-surface-3`), with a
+   *      small margin so rounding cannot push it under.
+   *   2. `--vn-text-2` and `--vn-text-3` are then spaced at even CIE L*
+   *      intervals above it. L* is perceptually uniform, so equal steps
+   *      look equal — spacing by contrast ratio instead would bunch the
+   *      dim end together.
+   *   3. Hue and saturation are unchanged from the originals; only
+   *      lightness moved. The ramp still reads as the same slate.
+   *
+   * Worst-case ratios: 15.0 / 8.3 / 6.3 / 4.7
+   * Perceptual steps (CIE L*): 22, 9, 9
+   *
+   * The bottom half is necessarily tighter than it was — that is what
+   * AA costs when the lowest tier started at 2.1:1. Do not reclaim the
+   * contrast by darkening a tier; add a tier if you need one.
+   *
+   * NOTE: these clear AA against the PLAIN surface ramp. Small text on a
+   * semantic soft tint (`--vn-*-soft`) needs `--vn-text-2` — the tints
+   * are lighter than `--vn-surface-3` and eat the remaining headroom.
+   * ───────────────────────────────────────────────────────── */
+  --vn-text: #f7f8fa;
+  --vn-text-2: #b6bbc7;
+  --vn-text-3: #9ea3ae;
+  --vn-text-4: #838c9d;
+
+  /* ── indigo accent — lifted for contrast on near-black ─── */
+  --vn-accent: #8b7cff;
+  --vn-accent-2: #a99eff;
+  --vn-accent-soft: rgba(139, 124, 255, 0.14);
+  --vn-accent-soft-2: rgba(139, 124, 255, 0.08);
+  --vn-accent-glow: rgba(139, 124, 255, 0.34);
+  --vn-on-accent: #0b0a1f;
+
+  /* ── cyan support accent ───────────────────────────────── */
+  --vn-cyan: #5fd4ff;
+  --vn-cyan-soft: rgba(95, 212, 255, 0.14);
+
+  /* ── semantic ──────────────────────────────────────────── */
+  --vn-success: #3edc97;
+  --vn-success-soft: rgba(62, 220, 151, 0.14);
+  --vn-warn: #ffb84d;
+  --vn-warn-soft: rgba(255, 184, 77, 0.14);
+  --vn-danger: #ff6b81;
+  --vn-danger-soft: rgba(255, 107, 129, 0.14);
+
+
+  /* ── gradients ─────────────────────────────────────────── */
+  --vn-gradient-accent: linear-gradient(135deg, #8b7cff 0%, #5fd4ff 100%);
+  --vn-gradient-surface: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  --vn-gradient-card: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
+
+  /* ── glass ─────────────────────────────────────────────── */
+  --vn-glass: rgba(17, 19, 24, 0.66);
+  --vn-glass-border: rgba(255, 255, 255, 0.1);
+
+  /* ── shadows — black is invisible on black, so dark mode
+   *    leans on the ring/glow rather than the drop ───────── */
+  --vn-shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --vn-shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.55);
+  --vn-shadow-glow: 0 0 0 1px rgba(139, 124, 255, 0.1),
+    0 8px 32px rgba(139, 124, 255, 0.18);
+  --vn-shadow-glow-strong: 0 0 0 1px rgba(139, 124, 255, 0.16),
+    0 12px 48px rgba(139, 124, 255, 0.26);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SHADCN BRIDGE
+
+   shadcn's own primitives (button, input, ...) read --background,
+   --primary, etc. Those are aliased onto the vn-* ramp instead of
+   carrying a second, independent palette that would drift out of
+   sync with this one.
+───────────────────────────────────────────────────────────── */
+
+:root,
+.dark {
+  --background: var(--vn-bg);
+  --foreground: var(--vn-text);
+
+  --card: var(--vn-surface);
+  --card-foreground: var(--vn-text);
+
+  --popover: var(--vn-surface);
+  --popover-foreground: var(--vn-text);
+
+  --primary: var(--vn-accent);
+  --primary-foreground: var(--vn-on-accent);
+
+  --secondary: var(--vn-surface-2);
+  --secondary-foreground: var(--vn-text);
+
+  --muted: var(--vn-surface-2);
+  --muted-foreground: var(--vn-text-3);
+
+  --accent: var(--vn-surface-3);
+  --accent-foreground: var(--vn-text);
+
+  --destructive: var(--vn-danger);
+
+  --border: var(--vn-hairline-2);
+  --input: var(--vn-hairline-2);
+  --ring: var(--vn-accent);
+
+  --chart-1: var(--vn-accent);
+  --chart-2: var(--vn-cyan);
+  --chart-3: var(--vn-success);
+  --chart-4: var(--vn-warn);
+  --chart-5: var(--vn-danger);
+
+  --radius: 0.75rem;
+
+  --sidebar: var(--vn-bg-2);
+  --sidebar-foreground: var(--vn-text);
+  --sidebar-primary: var(--vn-accent);
+  --sidebar-primary-foreground: var(--vn-on-accent);
+  --sidebar-accent: var(--vn-surface-2);
+  --sidebar-accent-foreground: var(--vn-text);
+  --sidebar-border: var(--vn-hairline);
+  --sidebar-ring: var(--vn-accent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TAILWIND UTILITY GENERATION
+
+   `inline` = emit `var(--vn-*)` into the utility, not a copy of
+   its value. This is what makes one class serve both themes.
+───────────────────────────────────────────────────────────── */
+
+@theme inline {
+  /* ── typography ────────────────────────────────────────── */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* No webfont behind this one. Playfair Display used to be loaded for it,
+     but nothing in the app ever applied `font-serif`, so it cost five
+     @font-face rules in the render-blocking stylesheet and five woff2
+     files in the build for text that is never rendered. The token stays
+     so the scale is complete; it now resolves to the system serif. */
+  --font-serif: ui-serif, Georgia, serif;
+  --font-heading: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+
+  /* ── palette ───────────────────────────────────────────── */
+  --color-vn-bg: var(--vn-bg);
+  --color-vn-bg-2: var(--vn-bg-2);
+
+  --color-vn-surface: var(--vn-surface);
+  --color-vn-surface-2: var(--vn-surface-2);
+  --color-vn-surface-3: var(--vn-surface-3);
+
+  --color-vn-hairline: var(--vn-hairline);
+  --color-vn-hairline-2: var(--vn-hairline-2);
+  --color-vn-hairline-3: var(--vn-hairline-3);
+
+  --color-vn-text: var(--vn-text);
+  --color-vn-text-2: var(--vn-text-2);
+  --color-vn-text-3: var(--vn-text-3);
+  --color-vn-text-4: var(--vn-text-4);
+
+  --color-vn-accent: var(--vn-accent);
+  --color-vn-accent-2: var(--vn-accent-2);
+  --color-vn-accent-soft: var(--vn-accent-soft);
+  --color-vn-accent-soft-2: var(--vn-accent-soft-2);
+  --color-vn-accent-glow: var(--vn-accent-glow);
+  --color-vn-on-accent: var(--vn-on-accent);
+
+  --color-vn-cyan: var(--vn-cyan);
+  --color-vn-cyan-soft: var(--vn-cyan-soft);
+
+  --color-vn-success: var(--vn-success);
+  --color-vn-success-soft: var(--vn-success-soft);
+  --color-vn-warn: var(--vn-warn);
+  --color-vn-warn-soft: var(--vn-warn-soft);
+  --color-vn-danger: var(--vn-danger);
+  --color-vn-danger-soft: var(--vn-danger-soft);
+
+
+  --color-vn-glass: var(--vn-glass);
+  --color-vn-glass-border: var(--vn-glass-border);
+
+  /* ── gradients ─────────────────────────────────────────── */
+  --gradient-vn-accent: var(--vn-gradient-accent);
+  --gradient-vn-surface: var(--vn-gradient-surface);
+  --gradient-vn-card: var(--vn-gradient-card);
+
+  /* ── shadows ───────────────────────────────────────────── */
+  --shadow-vn-soft: var(--vn-shadow-soft);
+  --shadow-vn-elevated: var(--vn-shadow-elevated);
+  --shadow-vn-glow: var(--vn-shadow-glow);
+  --shadow-vn-glow-strong: var(--vn-shadow-glow-strong);
+
+  /* ── blur presets ──────────────────────────────────────── */
+  --blur-vn-sm: 8px;
+  --blur-vn-md: 16px;
+  --blur-vn-lg: 28px;
+
+  /* ── shadcn aliases ────────────────────────────────────── */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ── radius scale ──────────────────────────────────────── */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}

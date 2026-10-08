@@ -1,0 +1,43 @@
+# LOCAL DEVELOPMENT ONLY: a throwaway Postgres and broker for `make run`.
+#
+# The deploy box does not use this file — it runs deploy/docker-compose.infra.yaml
+# (broker + observability, no Postgres) under vnytros-infra.service.
+# See deploy/README.md.
+services:
+  db:
+    image: postgres
+    container_name: vnytros-db
+    environment:
+      POSTGRES_USER: domain_connect
+      POSTGRES_PASSWORD: domainconnect
+      POSTGRES_DB: dc
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U domain_connect -d dc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: secret
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  rabbitmq_data:
+  pg_data:

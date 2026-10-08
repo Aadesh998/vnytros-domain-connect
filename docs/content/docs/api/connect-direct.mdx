@@ -1,0 +1,86 @@
+---
+title: Direct Connect
+description: Write DNS records directly through a provider's API using credentials you supply.
+---
+
+```
+POST /v1/connect/direct
+```
+
+Writes the A, CNAME, and TXT records directly through the DNS provider's API,
+using credentials the domain owner supplies, then queues verification. Two
+providers are supported: **AWS Route 53** and **Hostinger**.
+
+<Callout>
+Only record **creation** is implemented. Deleting, listing, or testing records
+through a provider is not supported yet — remove records in the provider's own
+console if you need to undo a connection.
+</Callout>
+
+<Callout>Requires an [API key](/docs/authentication#api-keys).</Callout>
+
+## Request body
+
+```json
+{
+  "domain": "example.com",
+  "provider": "hostinger",
+  "ip": "192.0.2.10",
+  "target": "cname.your-app.com",
+  "txt": "vnytros-verify=abc123",
+  "provider_config": {
+    "APIToken": "<hostinger-api-token>"
+  }
+}
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | The domain to configure |
+| `provider` | string | yes | `aws` or `hostinger` (see below) |
+| `ip` | string | no | A record value for the apex |
+| `target` | string | no | CNAME target for `www` |
+| `txt` | string | no | TXT verification value (auto-generated if omitted) |
+| `provider_config` | object | yes | Provider credentials — fields depend on `provider` (see below) |
+
+## Providers
+
+| `provider` | DNS host | `provider_config` fields |
+| --- | --- | --- |
+| `aws` | AWS Route 53 | `AccessKey`, `SecretKey` |
+| `hostinger` | Hostinger | `APIToken` |
+
+All fields in `provider_config` are required strings. Field names are matched
+case-insensitively (`accesskey` works too), but the underscore form
+(`access_key`) does **not** match. Any other `provider` value returns an
+error.
+
+```json
+{ "provider": "aws", "provider_config": { "AccessKey": "AKIA…", "SecretKey": "…" } }
+```
+
+```json
+{ "provider": "hostinger", "provider_config": { "APIToken": "…" } }
+```
+
+<Callout type="warn">
+Credentials are used for this request only to write the records. Prefer
+scoped, revocable tokens, and rotate them after onboarding.
+</Callout>
+
+## Response `200`
+
+```json
+{
+  "message": "Records applied successfully and verification queued",
+  "domain": "example.com"
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | Missing or invalid API key |
+| `BAD_REQUEST` | 400 | Invalid body or missing required fields |
+| `INTERNAL_SERVER_ERROR` | 500 | Unsupported `provider`, missing credential fields, or the provider rejected the records |

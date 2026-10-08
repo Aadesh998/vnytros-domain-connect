@@ -1,0 +1,75 @@
+---
+title: "CNAME Chain"
+description: "Follow a CNAME chain hop by hop, detecting loops, dead ends and records that cannot legally coexist with an alias."
+---
+
+```
+GET /v1/tools/dns/cname
+```
+
+Follow a CNAME chain hop by hop, detecting loops, dead ends and records that cannot legally coexist with an alias. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `cname_chain`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Hostname to trace |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/dns/cname?domain=example.com"
+```
+
+## What it checks
+
+- Resolves one hop at a time instead of letting the resolver flatten the chain, capped at 10 hops.
+- Detects loops using a visited set.
+- Flags a CNAME at the zone apex, which RFC 1034 forbids.
+- Flags MX, TXT or NS records owned by the same name as the CNAME.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `no_cname` | info | The name is not an alias. |
+| `chain_length` | pass/warn/fail | One hop passes; two to three warn; more fails. |
+| `loop` | fail | The chain cycles and never resolves. |
+| `apex_cname` | fail | A CNAME exists at the zone apex. |
+| `dead_end` | fail | The final target has no A or AAAA record. |
+| `cname_with_other_records` | fail | Other record types share the aliased name. |
+| `resolves` | pass | The chain ends at an address. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "start": "www.example.com",
+  "hops": [
+    {
+      "position": 1,
+      "name": "www.example.com",
+      "target": "cdn.provider.net",
+      "ttl": 300,
+      "latency_ms": 22
+    }
+  ],
+  "final_target": "cdn.provider.net",
+  "addresses": ["203.0.113.5"],
+  "is_apex": false,
+  "total_ms": 22
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

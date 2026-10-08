@@ -1,0 +1,60 @@
+---
+title: Detect Provider
+description: Identify which DNS provider runs a domain.
+---
+
+```
+GET /v1/detect
+```
+
+Resolves a domain's nameservers and matches them against the known-provider list.
+Public — **no authentication required**.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | The domain to inspect, e.g. `example.com` |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/detect?domain=example.com"
+```
+
+## Response `200`
+
+```json
+{
+  "domain": "example.com",
+  "nameservers": ["ns1.example.com", "ns2.example.com"],
+  "provider": {
+    "id": 1,
+    "name": "Hostinger",
+    "domain_connect_support": false
+  }
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `domain` | string | The domain that was queried |
+| `nameservers` | string[] | Nameservers found for the domain |
+| `provider` | object \| null | The detected provider, or `null` if unrecognized |
+| `provider.name` | string | Provider display name |
+| `provider.domain_connect_support` | boolean | Whether the provider advertises Domain Connect. Informational only — Vnytros does not run the Domain Connect apply flow |
+
+<Callout>
+`provider` is `null` when the nameservers don't match any known provider.
+Detection works for any DNS host; writing records through
+[Direct Connect](/docs/api/connect-direct) is supported for AWS Route 53
+and Hostinger.
+</Callout>
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` query param is missing |
+| `DOMAIN_NOT_FOUND` | 404 | Domain doesn't resolve / has no nameservers |
+| `INTERNAL_SERVER_ERROR` | 500 | Lookup failed unexpectedly |

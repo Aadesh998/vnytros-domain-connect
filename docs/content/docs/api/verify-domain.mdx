@@ -1,0 +1,54 @@
+---
+title: Verify Domain
+description: Re-check a linked domain's records and update its status.
+---
+
+```
+POST /v1/connect/verify
+```
+
+Re-runs verification for a domain you've previously linked: checks the A, CNAME,
+and TXT records and updates the stored status. On first reaching `completed`, it
+emits a `domain.connected` webhook.
+
+<Callout>Requires an [API key](/docs/authentication#api-keys). The domain must belong to your account.</Callout>
+
+## Request body
+
+```json
+{ "domain": "example.com" }
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | A domain previously linked by your account |
+
+## Response `200`
+
+```json
+{
+  "domain": "example.com",
+  "status": "completed",
+  "ip_matched": true,
+  "txt_matched": true,
+  "cname_matched": true,
+  "message": "Domain successfully verified and connected."
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | string | `pending`, `ip_applied`, or `completed` |
+| `ip_matched` | boolean | Whether the A record matches |
+| `txt_matched` | boolean | Whether the TXT record matches |
+| `cname_matched` | boolean | Whether the `www` CNAME matches |
+| `message` | string | Human-readable status summary |
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | Missing or invalid API key |
+| `BAD_REQUEST` | 400 | Invalid body or missing `domain` |
+| `NOT_FOUND` | 404 | Domain isn't linked to your account |
+| `INTERNAL_SERVER_ERROR` | 500 | Verification failed unexpectedly |

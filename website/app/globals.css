@@ -1,0 +1,143 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+/*
+ * Theme tokens (palette, fonts, shadcn vars) live in theme.css.
+ * This file only contains resets, body styles, utility classes, and
+ * animations.
+ */
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--vn-bg);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+  color: var(--vn-text);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "ss03", "cv11";
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+  overflow-x: hidden;
+}
+
+/* ── vnytros utility primitives ─────────────────────────────── */
+.vn-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vn-text-3);
+}
+.vn-eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: var(--vn-hairline-3);
+}
+
+:root {
+  --vn-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--vn-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--vn-text-4);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vn-text-3);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   KEYBOARD ACCESS
+
+   Two things Lighthouse asks a human to verify by hand, because it
+   cannot test them automatically: that every interactive control shows
+   a visible focus indicator, and that a keyboard user can reach the
+   page's content without tabbing through the whole nav first.
+───────────────────────────────────────────────────────────── */
+
+/* Skip link. Present in the DOM and focusable at all times, moved
+   off-screen with a transform rather than `display: none` or
+   `visibility: hidden` — both of which would remove it from the tab
+   order and defeat the point. First focusable element in <body>, so it
+   is what a keyboard user reaches on their first Tab. */
+.vn-skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 200;
+  padding: 0.625rem 1rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--vn-hairline-2);
+  background: var(--vn-surface);
+  color: var(--vn-text);
+  font-size: 13.5px;
+  font-weight: 540;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 1rem));
+  transition: transform 0.2s var(--vn-ease);
+}
+
+.vn-skip-link:focus {
+  transform: translateY(0);
+}
+
+/* Global keyboard focus ring.
+
+   Only four components styled focus at all, which left most links —
+   the nav, the footer, every tool card, the in-prose links — with
+   whatever the UA default happened to be, and Tailwind's preflight
+   removes that default outline.
+
+   `:focus-visible` rather than `:focus`, so the ring appears for
+   keyboard and assistive-tech users without drawing a box around every
+   element a mouse happens to click.
+
+   Components that already own their focus treatment set `outline: none`
+   via Tailwind's `outline-none` and are unaffected by this rule. */
+:focus-visible {
+  outline: 2px solid var(--vn-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

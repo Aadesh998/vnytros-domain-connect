@@ -1,0 +1,72 @@
+---
+title: Domain Status
+description: Check whether the expected A, CNAME, and TXT records are currently live on a domain.
+---
+
+```
+POST /v1/status
+```
+
+Compares a domain's live DNS against the records you expect, returning a
+per-record breakdown. Public — **no authentication required**.
+
+## Request body
+
+```json
+{
+  "domain": "example.com",
+  "ip": "192.0.2.10",
+  "target": "cname.your-app.com",
+  "txt": "vnytros-verify=abc123"
+}
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | The domain to check |
+| `ip` | string | no | Expected A record value (checked on the apex) |
+| `target` | string | no | Expected CNAME target (checked on `www`) |
+| `txt` | string | no | Expected TXT value (a `vnytros-verify=` prefix is added if absent) |
+
+Only the fields you provide are checked.
+
+## Response `200`
+
+```json
+{
+  "domain": "example.com",
+  "is_configured": true,
+  "records": [
+    {
+      "type": "A",
+      "host": "@",
+      "expected": "192.0.2.10",
+      "current": ["192.0.2.10"],
+      "status": true
+    },
+    {
+      "type": "CNAME",
+      "host": "www",
+      "expected": "cname.your-app.com",
+      "current": ["cname.your-app.com"],
+      "status": true
+    }
+  ]
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `is_configured` | boolean | `true` only when every checked record matches |
+| `records[].type` | string | `A`, `CNAME`, or `TXT` |
+| `records[].host` | string | `@` for apex, `www` for the CNAME |
+| `records[].expected` | string | The value you supplied |
+| `records[].current` | string[] | What's actually live |
+| `records[].status` | boolean | Whether this record matches |
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | Invalid body or missing `domain` |
+| `INTERNAL_SERVER_ERROR` | 500 | Lookup failed unexpectedly |

@@ -1,0 +1,73 @@
+# Scrape targets.
+#
+# Prometheus runs on the HOST network (see docker-compose.infra.yaml), so every
+# target here is localhost: the Go services bind loopback directly, and the
+# other containers publish their metrics ports to loopback.
+#
+# Targets are written 127.0.0.1 rather than "localhost" on purpose: localhost
+# resolves to ::1 first on this host, and the Go listeners bind IPv4, so every
+# scrape failed with "dial tcp [::1]: connection refused". Nothing here is
+# reachable from outside the box — /metrics exposes route names, queue names and
+# latency profiles.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    env: production
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["127.0.0.1:9090"]
+
+  # Host CPU/memory/disk/network.
+  - job_name: node
+    static_configs:
+      - targets: ["127.0.0.1:9100"]
+
+  # Broker-wide totals: connections, channels, queue counts, memory.
+  - job_name: rabbitmq
+    static_configs:
+      - targets: ["127.0.0.1:15692"]
+
+  # PER-QUEUE depth, unacked and consumer counts — the metrics that actually
+  # tell you whether campaigns are draining.
+  #
+  # A separate job because the default /metrics is AGGREGATED ONLY: verified
+  # against rabbitmq_prometheus, it emits zero series carrying a `queue` label.
+  # Per-queue data lives on /metrics/detailed and only for the families asked
+  # for, hence the two `family` params. Series are named
+  # rabbitmq_detailed_queue_* rather than rabbitmq_queue_*.
+  - job_name: rabbitmq-queues
+    metrics_path: /metrics/detailed
+    params:
+      family: [queue_coarse_metrics, queue_consumer_count]
+    static_configs:
+      - targets: ["127.0.0.1:15692"]
+
+  # --- the application itself ---------------------------------------------
+  - job_name: vnytros-server
+    static_configs:
+      - targets: ["127.0.0.1:9101"]
+        labels: { service: vnytros-server }
+
+  - job_name: vnytros-mcp
+    static_configs:
+      - targets: ["127.0.0.1:9102"]
+        labels: { service: vnytros-mcp }
+
+  # No HTTP server of its own — this listener is the only outside view of job
+  # throughput, latency and retry churn.
+  - job_name: vnytros-worker
+    static_configs:
+      - targets: ["127.0.0.1:9103"]
+        labels: { service: vnytros-worker }
+
+  # RED metrics derived from spans, as a cross-check on the above.
+  - job_name: otel-spanmetrics
+    static_configs:
+      - targets: ["127.0.0.1:8889"]
+
+  - job_name: tempo
+    static_configs:
+      - targets: ["127.0.0.1:3200"]

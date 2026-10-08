@@ -1,0 +1,78 @@
+---
+title: "IP & ASN"
+description: "Resolve a hostname and describe each address: network operator, routing prefix, reverse DNS and IPv6 support."
+---
+
+```
+GET /v1/tools/ip/info
+```
+
+Resolve a hostname and describe each address: network operator, routing prefix, reverse DNS and IPv6 support. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `ip_info`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `target` | string | yes | Hostname or bare IP address |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/ip/info?target=example.com"
+```
+
+## What it checks
+
+- Resolves both A and AAAA records, or accepts a bare IP.
+- Looks up the announcing autonomous system and routing prefix via Team Cymru`s DNS service.
+- Fetches the PTR record for each address.
+- Identifies the hosting provider or CDN where the network is recognisable.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `resolves` | pass | Addresses were found. |
+| `provider` / `network` | info | The operator behind the addresses. |
+| `ptr` | pass | Every address has reverse DNS. |
+| `no_ptr` / `partial_ptr` | info | Reverse DNS missing or incomplete. |
+| `ipv6` | pass | AAAA records published. |
+| `no_ipv6` | warn | IPv4 only. |
+| `multi_network` | pass | Addresses span multiple autonomous systems. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "target": "example.com",
+  "addresses": [
+    {
+      "ip": "13.248.169.48",
+      "version": 4,
+      "ptr": "a904c694c05102f30.awsglobalaccelerator.com",
+      "asn": "AS16509",
+      "as_name": "AMAZON-02 - Amazon.com, Inc., US",
+      "prefix": "13.248.160.0/20",
+      "country": "US",
+      "registry": "ARIN"
+    }
+  ],
+  "has_ipv4": true,
+  "has_ipv6": false,
+  "networks": ["AS16509"],
+  "providers": ["AWS"]
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `target` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |

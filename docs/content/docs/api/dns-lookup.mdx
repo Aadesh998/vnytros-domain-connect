@@ -1,0 +1,59 @@
+---
+title: DNS Lookup
+description: Resolve A, AAAA, MX, TXT, NS, and CNAME records for any domain in a single call.
+---
+
+```
+GET /v1/dns/lookup
+```
+
+Performs concurrent lookups for the common record types and returns them grouped
+by type. Public — **no authentication required**.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | The domain to look up |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/dns/lookup?domain=example.com"
+```
+
+## Response `200`
+
+Each record type is returned as its own entry. A type that fails to resolve (or
+has no records) reports an `error` instead of values — the overall request still
+succeeds.
+
+```json
+{
+  "domain": "example.com",
+  "records": [
+    { "type": "A",     "values": ["93.184.216.34"] },
+    { "type": "AAAA",  "values": ["2606:2800:220:1:248:1893:25c8:1946"] },
+    { "type": "MX",    "values": ["10 mail.example.com"] },
+    { "type": "TXT",   "values": ["v=spf1 include:_spf.example.com ~all"] },
+    { "type": "NS",    "values": ["ns1.example.com", "ns2.example.com"] },
+    { "type": "CNAME", "values": [], "error": "no records found" }
+  ]
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `domain` | string | The normalized domain queried |
+| `records` | object[] | One entry per record type |
+| `records[].type` | string | `A`, `AAAA`, `MX`, `TXT`, `NS`, or `CNAME` |
+| `records[].values` | string[] | Resolved values (MX values are `"<pref> <host>"`) |
+| `records[].error` | string? | Present only when that type couldn't be resolved |
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` query param is missing or empty |
+| `DOMAIN_NOT_FOUND` | 404 | Domain doesn't exist (NXDOMAIN) |
+| `INTERNAL_SERVER_ERROR` | 500 | Lookup failed unexpectedly |

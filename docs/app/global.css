@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+@source "../node_modules/fumadocs-ui/dist/**/*.js";
+
+/*
+ * ─────────────────────────────────────────────────────────────
+ * VNYTROS BRAND OVERRIDES
+ *
+ * The presets above ship a neutral grey scale whose `primary` is
+ * near-black, so nothing on this site carried the brand accent.
+ *
+ * These values are copied from `website/app/theme.css` in this monorepo. They
+ * are literals rather than shared imports because the two sites
+ * are separate deployments with no build-time link — if you
+ * change the palette there, change it here too.
+ *
+ * WHY PLAIN `:root` / `.dark` AND NOT `@theme`:
+ * Fumadocs declares its colours in a plain (non-`inline`) `@theme`
+ * block, so Tailwind emits utilities that *reference*
+ * `var(--color-fd-*)` rather than inlining the value. Redefining
+ * the variable later in the cascade therefore retints every
+ * existing utility, with no need to redeclare the theme.
+ * `@theme` here would fight the preset instead of overriding it.
+ * ─────────────────────────────────────────────────────────────
+ */
+
+:root {
+  /* canvas + text */
+  --color-fd-background: #ffffff;
+  --color-fd-foreground: #09090b;
+
+  /* elevated surfaces */
+  --color-fd-card: #ffffff;
+  --color-fd-card-foreground: #09090b;
+  --color-fd-popover: #ffffff;
+  --color-fd-popover-foreground: #09090b;
+
+  /* recessed surfaces */
+  --color-fd-muted: #f7f7f8;
+  --color-fd-muted-foreground: #52525b;
+  --color-fd-secondary: #f7f7f8;
+  --color-fd-secondary-foreground: #09090b;
+
+  /* hover / active rows in the sidebar and TOC */
+  --color-fd-accent: #efeff1;
+  --color-fd-accent-foreground: #09090b;
+
+  --color-fd-border: rgba(9, 9, 11, 0.11);
+
+  /* the brand accent — links, active nav item, focus rings */
+  --color-fd-primary: #5b4bf5;
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-ring: #5b4bf5;
+}
+
+.dark {
+  --color-fd-background: #08090b;
+  --color-fd-foreground: #f7f8fa;
+
+  --color-fd-card: #111318;
+  --color-fd-card-foreground: #f7f8fa;
+  --color-fd-popover: #111318;
+  --color-fd-popover-foreground: #f7f8fa;
+
+  --color-fd-muted: #171a20;
+  --color-fd-muted-foreground: #b4bac6;
+  --color-fd-secondary: #171a20;
+  --color-fd-secondary-foreground: #f7f8fa;
+
+  --color-fd-accent: #1e222a;
+  --color-fd-accent-foreground: #f7f8fa;
+
+  --color-fd-border: rgba(255, 255, 255, 0.1);
+
+  /* Lifted in dark, as on the marketing site, to clear contrast
+     against the near-black canvas. */
+  --color-fd-primary: #8b7cff;
+  --color-fd-primary-foreground: #0b0a1f;
+  --color-fd-ring: #8b7cff;
+}
+
+/*
+ * neutral.css re-declares three of these under `.dark #nd-sidebar`,
+ * which outranks a bare `.dark`. Without matching that selector the
+ * sidebar keeps its grey while the rest of the page turns.
+ */
+.dark #nd-sidebar {
+  --color-fd-muted: #171a20;
+  --color-fd-secondary: #171a20;
+  --color-fd-muted-foreground: #b4bac6;
+}
+
+/* Typography — match the marketing site's faces. */
+@theme {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+body {
+  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}

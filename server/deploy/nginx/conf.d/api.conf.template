@@ -1,0 +1,43 @@
+# Template: rendered by deploy/scripts/nginx-install.sh with
+#   envsubst '${DOMAIN}' < api.conf.template > /etc/nginx/conf.d/api.conf
+# Only ${DOMAIN} is substituted; nginx's own $variables are left alone.
+# api + mailforge. Certbot adds the TLS block and the HTTPS redirect.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name api.${DOMAIN};
+
+    # Campaign sends upload a recipient CSV; nginx defaults to 1m.
+    client_max_body_size 25m;
+
+    access_log /var/log/nginx/api.access.log;
+    error_log  /var/log/nginx/api.error.log;
+
+    location / {
+        proxy_pass http://vnytros_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        $connection_upgrade;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+    }
+
+    # Tracking pixel: one hit per email open, keep it out of the access log.
+    location = /api/track {
+        proxy_pass http://vnytros_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        $connection_upgrade;
+        proxy_connect_timeout 10s;
+        access_log off;
+    }
+}

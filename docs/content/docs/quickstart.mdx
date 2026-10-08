@@ -1,0 +1,102 @@
+---
+title: Quickstart
+description: Run your own Vnytros instance, detect a domain's provider, then connect it.
+---
+
+Vnytros is self-hosted: there is no hosted API to sign up for. You run the
+server yourself, then call it. The examples use the placeholder
+`https://api.example.com` — substitute your own deployment's URL (or
+`http://localhost:<PORT>` while developing).
+
+## 1. Run your own Vnytros
+
+Follow [Self-hosting](/docs/self-hosting) to start the API (and, if you want a
+UI for accounts and API keys, the dashboard). When the API is up, this should
+answer:
+
+```bash
+curl "https://api.example.com/v1/tools"
+```
+
+## 2. Detect a provider — no auth required
+
+Find out who runs a domain's DNS:
+
+```bash
+curl "https://api.example.com/v1/detect?domain=example.com"
+```
+
+```json
+{
+  "domain": "example.com",
+  "nameservers": ["ns1.example.com", "ns2.example.com"],
+  "provider": {
+    "id": 1,
+    "name": "Hostinger",
+    "domain_connect_support": false
+  }
+}
+```
+
+Detection works for any DNS host. If the provider is AWS Route 53 or
+Hostinger, you can write the records for the customer with
+[Direct Connect](/docs/api/connect-direct) in step 4.
+
+## 3. Create an API key
+
+Authenticated endpoints use an API key tied to an account on your deployment.
+Sign up and generate a key on your deployment's dashboard, or via the API with
+your JWT access token (see [Account](/docs/account) to sign up and log in):
+
+```bash
+curl -X POST "https://api.example.com/v1/create/api" \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{ "web_hook": "https://your-app.com/webhooks/vnytros" }'
+```
+
+```json
+{ "message": "dc_live_3f9a8b2c4d5e6f7a8b9c0d1e2f3a4b5c" }
+```
+
+<Callout type="warn">
+The plaintext key is shown **once**. Store it securely — you can't retrieve it again.
+</Callout>
+
+## 4. Connect a domain
+
+Write the A, CNAME, and TXT records through the provider's API using
+credentials the domain owner supplies (here, Hostinger):
+
+```bash
+curl -X POST "https://api.example.com/v1/connect/direct" \
+  -H "Authorization: Bearer <api_key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "domain": "example.com",
+    "provider": "hostinger",
+    "ip": "192.0.2.10",
+    "target": "cname.your-app.com",
+    "txt": "vnytros-verify=abc123",
+    "provider_config": { "APIToken": "<hostinger-api-token>" }
+  }'
+```
+
+```json
+{
+  "message": "Records applied successfully and verification queued",
+  "domain": "example.com"
+}
+```
+
+Verification runs in the background — poll
+[`POST /v1/connect/verify`](/docs/api/verify-domain) or, if you configured a
+webhook, wait for the `domain.connected` event.
+
+## Next steps
+
+<Cards>
+  <Card title="Authentication" href="/docs/authentication" description="API keys vs. access tokens." />
+  <Card title="Direct Connect" href="/docs/api/connect-direct" description="Supported providers and their credential fields." />
+  <Card title="Webhooks" href="/docs/webhooks" description="React to domain lifecycle events." />
+</Cards>

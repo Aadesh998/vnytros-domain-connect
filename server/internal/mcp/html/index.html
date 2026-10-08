@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vnytros Domain Connect — MCP Server</title>
+<meta name="description" content="Model Context Protocol server for Vnytros Domain Connect: detect DNS providers, check records and verify domains from your AI client.">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #12151a;
+    --border: #222831;
+    --text: #e6e9ef;
+    --muted: #98a2b3;
+    --accent: #6ea8fe;
+    --code-bg: #0f1216;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f7f8fa;
+      --panel: #ffffff;
+      --border: #e3e6ea;
+      --text: #12151a;
+      --muted: #5b6472;
+      --accent: #1a56db;
+      --code-bg: #f1f3f6;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 36px; }
+  .badge {
+    display: inline-block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; margin-bottom: 14px;
+  }
+  h1 { font-size: 30px; line-height: 1.25; margin: 0 0 10px; }
+  h2 { font-size: 19px; margin: 40px 0 14px; }
+  p { color: var(--muted); margin: 0 0 14px; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; }
+  code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; margin: 0 0 14px; color: var(--text);
+  }
+  pre code { background: none; border: 0; padding: 0; }
+  dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 8px 18px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: 14px; }
+  dl.meta dd { margin: 0; }
+  dl.meta dd code { word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+  td.name code { white-space: nowrap; }
+  .params { color: var(--muted); font-size: 13px; }
+  .lock { color: var(--accent); font-size: 12px; }
+  .scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  ol { color: var(--muted); padding-left: 22px; }
+  footer { margin-top: 48px; border-top: 1px solid var(--border); padding-top: 20px; color: var(--muted); font-size: 13.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge">Model Context Protocol</span>
+    <h1>Vnytros Domain Connect MCP Server</h1>
+    <p>Connect custom domains from your AI client: detect the DNS provider, check and verify the records, and run DNS and email-authentication diagnostics — all as MCP tools.</p>
+  </header>
+
+  <h2>Endpoint</h2>
+  <dl class="meta">
+    <dt>MCP endpoint</dt><dd><code>{{.Resource}}</code></dd>
+    <dt>Transport</dt><dd>Streamable HTTP (stateless)</dd>
+    <dt>Auth</dt><dd>OAuth 2.1 bearer token</dd>
+    <dt>Authorization server</dt><dd><code>{{.AuthServer}}</code></dd>
+    <dt>Resource metadata</dt><dd><code>{{.MetadataURL}}</code></dd>
+  </dl>
+
+  <h2>Add to a client</h2>
+  <p>Claude Code:</p>
+  <pre><code>claude mcp add --transport http domain-connect {{.Resource}}</code></pre>
+  <p>Any client that reads <code>mcp.json</code>:</p>
+  <pre><code>{
+  "mcpServers": {
+    "domain-connect": {
+      "type": "http",
+      "url": "{{.Resource}}"
+    }
+  }
+}</code></pre>
+  <p>On first use the client is redirected to <code>{{.AuthServer}}</code> to sign in and grant access; the issued bearer token is then sent on every request.</p>
+
+  <h2>Tools</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Tool</th><th>What it does</th></tr></thead>
+      <tbody>
+      {{range .Tools}}
+        <tr>
+          <td class="name"><code>{{.Name}}</code>{{if .Auth}} <span class="lock" title="Requires an authenticated user">&#128274;</span>{{end}}</td>
+          <td>
+            {{.Description}}
+            {{if .Params}}<div class="params">{{range $i, $p := .Params}}{{if $i}} · {{end}}{{$p}}{{end}}</div>{{end}}
+          </td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  <p><span class="lock">&#128274;</span> marks tools that act on the signed-in user's own linked domains. Parameters ending in <code>?</code> are optional.</p>
+
+  <h2>Typical flow</h2>
+  <ol>
+    <li>Call <code>domain_provider</code> to find who manages the domain's DNS.</li>
+    <li>Add the A, CNAME and TXT records at that DNS provider (or through the <code>/v1/connect/direct</code> API for AWS Route 53 and Hostinger).</li>
+    <li>Call <code>domain_status</code> to confirm the A, CNAME and TXT records have propagated.</li>
+    <li>Call <code>domain_verify</code> to mark the domain verified on your account.</li>
+  </ol>
+
+  <footer>
+    {{.ServerName}} v{{.ServerVersion}}{{if .WebsiteURL}} · <a href="{{.WebsiteURL}}">{{.WebsiteURL}}</a>{{end}}
+  </footer>
+</div>
+</body>
+</html>

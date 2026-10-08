@@ -1,0 +1,28 @@
+# Auto-provisioned on first boot, so Grafana comes up already wired.
+#
+# URLs are 127.0.0.1, not container names: Grafana runs on the host network
+# (see docker-compose.infra.yaml), so "prometheus" and "tempo" would not
+# resolve. IPv4 is pinned because localhost resolves to ::1 first on some hosts.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 30s
+
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    access: proxy
+    url: http://127.0.0.1:3200
+    jsonData:
+      # Jump from a slow span straight to the matching RED metric.
+      tracesToMetrics:
+        datasourceUid: prometheus
+      serviceMap:
+        datasourceUid: prometheus

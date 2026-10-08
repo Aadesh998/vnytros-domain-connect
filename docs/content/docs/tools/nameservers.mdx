@@ -1,0 +1,81 @@
+---
+title: "Nameserver Consistency"
+description: "Compare the registrar delegation against the zone, and check every authoritative server is serving the same zone version."
+---
+
+```
+GET /v1/tools/dns/nameservers
+```
+
+Compare the registrar delegation against the zone, and check every authoritative server is serving the same zone version. Public — **no authentication required**.
+
+Returns the standard [report envelope](/docs/tools). Tool id: `nameserver_consistency`.
+
+## Query parameters
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain` | string | yes | Domain to check |
+
+## Request
+
+```bash
+curl "https://api.example.com/v1/tools/dns/nameservers?domain=example.com"
+```
+
+## What it checks
+
+- Reads the NS delegation published by the parent zone and compares it with the NS records inside the zone.
+- Queries every authoritative server directly with recursion disabled and compares SOA serial numbers.
+- Confirms each server answers authoritatively for the zone.
+- Checks address diversity across subnets and DNS providers.
+
+## Findings
+
+| Finding id | Status | Meaning |
+| --- | --- | --- |
+| `delegation_match` | pass | Parent delegation and zone NS records agree. |
+| `delegation_mismatch` | fail | The registrar and the zone list different nameservers. |
+| `serials_match` | pass | All authoritative servers report the same SOA serial. |
+| `serial_mismatch` | fail | Servers for one provider disagree — zone transfers are failing. |
+| `multi_provider_serials` | info | Serials differ across independent providers, which is expected. |
+| `ns_unreachable` | fail | One or more nameservers did not respond. |
+| `not_authoritative` | fail | A delegated server does not claim authority for the zone. |
+| `single_ns` | fail | Only one nameserver; RFC 1034 requires at least two. |
+| `single_subnet` | warn | All nameservers share one /24. |
+
+## Response `200`
+
+The `raw` object for this tool:
+
+```json
+{
+  "zone": "example.com",
+  "parent_zone": "com",
+  "delegation_ns": ["ns1.example.net", "ns2.example.net"],
+  "zone_ns": ["ns1.example.net", "ns2.example.net"],
+  "servers": [
+    {
+      "host": "ns1.example.net",
+      "ips": ["203.0.113.10"],
+      "reachable": true,
+      "authoritative": true,
+      "serial": 2026081501,
+      "latency_ms": 73
+    }
+  ],
+  "serials_agree": true,
+  "delegation_matches": true,
+  "distinct_subnets": 2,
+  "providers": ["example.net"]
+}
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | `domain` is missing, or not a usable domain |
+| `FORBIDDEN` | 403 | The target resolves to a private or internal address |
+| `RATE_LIMITED` | 429 | More than 60 requests in a minute from one IP |
+| `INTERNAL_SERVER_ERROR` | 500 | The check failed unexpectedly |
