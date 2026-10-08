@@ -11,7 +11,7 @@
    * with error 10143. Keep the two in sync.
    *
    * This is the Cloudflare Worker's name, not a repository name: the site now
-   * lives in the `website/` folder of the vnytros/vnytros monorepo, and
+   * lives in the `website/` folder of the Aadesh998/vnytros-domain-connect monorepo, and
    * renaming the Worker would create a new one in the Cloudflare account. If
    * you deploy your own copy, change it here and in `services` below.
    */

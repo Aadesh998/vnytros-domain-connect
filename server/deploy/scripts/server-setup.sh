@@ -17,7 +17,7 @@
 set -euo pipefail
 
 GO_VERSION="1.26.2"
-REPO_URL="${REPO_URL:-https://github.com/vnytros/vnytros.git}"
+REPO_URL="${REPO_URL:-https://github.com/Aadesh998/vnytros-domain-connect.git}"
 # Where the monorepo is cloned. deploy.sh builds from $CLONE_DIR/server.
 CLONE_DIR="${CLONE_DIR:-$HOME/app/vnytros}"
 

@@ -101,7 +101,7 @@ export default function OpengraphImage() {
             letterSpacing: "-0.01em",
           }}
         >
-          <div style={{ display: "flex" }}>github.com/vnytros/vnytros</div>
+          <div style={{ display: "flex" }}>github.com/Aadesh998/vnytros-domain-connect</div>
           <div style={{ display: "flex", color: "#4e5563" }}>·</div>
           <div style={{ display: "flex" }}>open source · AGPL-3.0</div>
         </div>

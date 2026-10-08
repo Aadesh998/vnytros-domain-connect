@@ -13,10 +13,10 @@ export const SITE_URL = (
 ).replace(/\/+$/, "");
 
 /** The GitHub organisation (the project's identity on GitHub). */
-export const GITHUB_ORG_URL = "https://github.com/vnytros";
+export const GITHUB_ORG_URL = "https://github.com/Aadesh998";
 
 /** All source code lives in this one monorepo, organised by folder. */
-export const REPO_URL = "https://github.com/vnytros/vnytros";
+export const REPO_URL = "https://github.com/Aadesh998/vnytros-domain-connect";
 
 /** Link to a folder (or file) on the monorepo's default branch. */
 export const repoTree = (path: string) => `${REPO_URL}/tree/main/${path}`;

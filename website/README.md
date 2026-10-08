@@ -4,11 +4,11 @@ The project landing page for **Vnytros**, an
 open-source DNS and email-authentication toolkit with a built-in mail
 platform. You self-host it. There is no hosted service, and the project runs
 no public copy of this page: its home is the
-[GitHub repository](https://github.com/vnytros/vnytros).
+[GitHub repository](https://github.com/Aadesh998/vnytros-domain-connect).
 
 This site is deliberately small: a static Next.js app with a single page, no
 accounts, no forms and no API calls. It is the `website/` folder of the
-[Vnytros monorepo](https://github.com/vnytros/vnytros); every command below
+[Vnytros monorepo](https://github.com/Aadesh998/vnytros-domain-connect); every command below
 runs from it.
 
 | Route      | What it is                                                                 |
@@ -25,8 +25,8 @@ Every path the site used to serve (`/tools`, `/guides`, `/blog`, `/mcp`,
 Requires Node.js 20+.
 
 ```bash
-git clone https://github.com/vnytros/vnytros
-cd vnytros/website
+git clone https://github.com/Aadesh998/vnytros-domain-connect
+cd vnytros-domain-connect/website
 npm install
 cp .env.example .env.local   # optional
 npm run dev                  # http://localhost:3000

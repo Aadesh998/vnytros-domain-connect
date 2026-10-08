@@ -21,7 +21,7 @@ MCP server, mail, or accounts), so:
   never a "sign up" link or a link to a hosted dashboard.
 - No "free hosted tools", "public API", or "use our API" claims. The project
   runs no website or hosted service; its home is the GitHub repository
-  (https://github.com/vnytros/vnytros). Point to a docs page or GitHub instead.
+  (https://github.com/Aadesh998/vnytros-domain-connect). Point to a docs page or GitHub instead.
 - The quickstart starts with [Self-hosting](content/docs/self-hosting.mdx).
 
 They need to know what to send, what comes back, what can go wrong, and

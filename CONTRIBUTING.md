@@ -1,7 +1,7 @@
 # Contributing
 
 Thanks for helping improve Vnytros. Issues and pull requests are welcome at
-<https://github.com/vnytros/vnytros>.
+<https://github.com/Aadesh998/vnytros-domain-connect>.
 
 This is one repository with five independent parts. Each folder builds and
 tests on its own; there is no shared workspace or root `package.json`.

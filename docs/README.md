@@ -4,7 +4,7 @@ Source for the Vnytros documentation site — the reference for the
 Vnytros API (provider detection, direct DNS connect, verification, network
 tools, webhooks, OAuth/MCP). Built with [Fumadocs](https://fumadocs.dev) on
 Next.js. This is the `docs/` folder of the
-[Vnytros monorepo](https://github.com/vnytros/vnytros); every command below
+[Vnytros monorepo](https://github.com/Aadesh998/vnytros-domain-connect); every command below
 runs from it.
 
 Vnytros is a free, open-source, **self-hosted** community project: there is
@@ -23,7 +23,7 @@ npm run build            # production build
 ```
 
 The pages can also be read directly on GitHub under
-[`content/docs/`](https://github.com/vnytros/vnytros/tree/main/docs/content/docs).
+[`content/docs/`](https://github.com/Aadesh998/vnytros-domain-connect/tree/main/docs/content/docs).
 
 ## Environment variables
 

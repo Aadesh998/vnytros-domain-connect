@@ -7,7 +7,7 @@ project follows [Semantic Versioning](https://semver.org/); while it is below
 ## Unreleased
 
 - Source moved to the `sdk/` folder of the
-  [vnytros/vnytros](https://github.com/vnytros/vnytros) monorepo; package
+  [Aadesh998/vnytros-domain-connect](https://github.com/Aadesh998/vnytros-domain-connect) monorepo; package
   metadata (`repository.directory`, `homepage`, `bugs`) updated to match.
 - Added a `prepack` script that runs the build, so `npm pack` always produces
   a tarball containing `dist/`. The README documents installing the SDK

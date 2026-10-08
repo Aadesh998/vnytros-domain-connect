@@ -1,12 +1,12 @@
 # Vnytros Dashboard
 
-The web dashboard for [Vnytros](https://github.com/vnytros/vnytros), a free, open-source
+The web dashboard for [Vnytros](https://github.com/Aadesh998/vnytros-domain-connect), a free, open-source
 community project for connecting domains and sending email you can trust.
 
 Vnytros is **self-hosted**: the project runs no public API, dashboard, or
 accounts. You deploy this dashboard next to your own API
 ([`server/`](../server) in the same
-[monorepo](https://github.com/vnytros/vnytros)) and point it at that API.
+[monorepo](https://github.com/Aadesh998/vnytros-domain-connect)) and point it at that API.
 This folder is `dashboard/`; every command below runs from it.
 
 Signed-in users can:
@@ -32,8 +32,8 @@ Requirements: Node.js 20 or newer, npm, and a running Vnytros API (see the
 [self-hosting guide](../docs/content/docs/self-hosting.mdx)).
 
 ```sh
-git clone https://github.com/vnytros/vnytros
-cd vnytros/dashboard
+git clone https://github.com/Aadesh998/vnytros-domain-connect
+cd vnytros-domain-connect/dashboard
 npm install
 cp .env.example .env.local   # set VITE_API_BASE_URL to your API
 npm run dev                  # http://localhost:5173

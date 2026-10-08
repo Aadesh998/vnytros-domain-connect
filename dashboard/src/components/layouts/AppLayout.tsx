@@ -191,7 +191,7 @@ export function AppLayout() {
           </button>
           <div className="flex items-center gap-3 px-2 pt-1 text-xs text-vn-text-3">
             <a
-              href="https://github.com/vnytros/vnytros"
+              href="https://github.com/Aadesh998/vnytros-domain-connect"
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1.5 transition-colors hover:text-vn-text"
@@ -234,7 +234,7 @@ export function AppLayout() {
           <div className="mb-4 hidden justify-end lg:flex">
             <Button variant="outline" size="sm" asChild>
               <a
-                href="https://github.com/vnytros/vnytros/tree/main/docs/content/docs"
+                href="https://github.com/Aadesh998/vnytros-domain-connect/tree/main/docs/content/docs"
                 target="_blank"
                 rel="noreferrer"
               >

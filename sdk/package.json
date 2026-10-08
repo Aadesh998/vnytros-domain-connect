@@ -5,12 +5,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vnytros/vnytros.git",
+    "url": "git+https://github.com/Aadesh998/vnytros-domain-connect.git",
     "directory": "sdk"
   },
-  "homepage": "https://github.com/vnytros/vnytros/tree/main/sdk#readme",
+  "homepage": "https://github.com/Aadesh998/vnytros-domain-connect/tree/main/sdk#readme",
   "bugs": {
-    "url": "https://github.com/vnytros/vnytros/issues"
+    "url": "https://github.com/Aadesh998/vnytros-domain-connect/issues"
   },
   "type": "module",
   "sideEffects": false,

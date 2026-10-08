@@ -1,14 +1,14 @@
 # @vnytros/sdk
 
-Official JavaScript/TypeScript SDK for the [Vnytros](https://github.com/vnytros/vnytros) API.
+Official JavaScript/TypeScript SDK for the [Vnytros](https://github.com/Aadesh998/vnytros-domain-connect) API.
 Vnytros is a free, open-source project: let your users point their own domain at
 your service, check what their DNS looks like, and watch the records go live.
 
 - Zero runtime dependencies. Node 18+.
 - ESM, CJS and TypeScript types.
 - MIT licensed. There is no paid tier and no API pricing.
-- Source: the [`sdk/`](https://github.com/vnytros/vnytros/tree/main/sdk)
-  folder of the [Vnytros monorepo](https://github.com/vnytros/vnytros).
+- Source: the [`sdk/`](https://github.com/Aadesh998/vnytros-domain-connect/tree/main/sdk)
+  folder of the [Vnytros monorepo](https://github.com/Aadesh998/vnytros-domain-connect).
 
 ## The one rule
 
@@ -24,9 +24,9 @@ monorepo (see [Using the SDK without npm](#using-the-sdk-without-npm) below for
 the details of each method):
 
 ```bash
-git clone https://github.com/vnytros/vnytros
-cd vnytros/sdk && npm ci && npm pack            # -> vnytros-sdk-0.2.0.tgz
-cd /path/to/your-app && npm install /path/to/vnytros/sdk/vnytros-sdk-0.2.0.tgz
+git clone https://github.com/Aadesh998/vnytros-domain-connect
+cd vnytros-domain-connect/sdk && npm ci && npm pack            # -> vnytros-sdk-0.2.0.tgz
+cd /path/to/your-app && npm install /path/to/vnytros-domain-connect/sdk/vnytros-sdk-0.2.0.tgz
 ```
 
 Your code still imports it as `@vnytros/sdk`. Then configure:
@@ -41,7 +41,7 @@ VNYTROS_WEBHOOK_SECRET=...     # WEBHOOK_SIGNING_SECRET on the API
 
 Vnytros is self-hosted: there is no hosted Vnytros API, so `baseUrl` is
 required and points at the API you run (see the
-[`server/`](https://github.com/vnytros/vnytros/tree/main/server) folder of the
+[`server/`](https://github.com/Aadesh998/vnytros-domain-connect/tree/main/server) folder of the
 monorepo).
 
 ```ts
@@ -64,7 +64,7 @@ The package is not on npmjs.com. Every method below gives your app a normal
 **(a) Tarball from `npm pack` (recommended for apps and CI).**
 
 ```bash
-cd vnytros/sdk
+cd vnytros-domain-connect/sdk
 npm ci
 npm pack                       # runs the build first (prepack), writes vnytros-sdk-0.2.0.tgz
 cd /path/to/your-app
@@ -80,9 +80,9 @@ CHANGELOG and LICENSE, exactly what a registry install would.
 **(b) Local folder link (for developing the SDK and an app together).**
 
 ```bash
-cd vnytros/sdk && npm ci && npm run build    # dist/ must exist before installing
+cd vnytros-domain-connect/sdk && npm ci && npm run build    # dist/ must exist before installing
 cd /path/to/your-app
-npm install file:../path/to/vnytros/sdk
+npm install file:../path/to/vnytros-domain-connect/sdk
 ```
 
 npm symlinks the folder, so rebuild (`npm run build`, or `npm run dev` to
@@ -334,7 +334,7 @@ The path is absolute because `go test` runs inside the package directory.
 ## Contributing and license
 
 See the monorepo's
-[CONTRIBUTING.md](https://github.com/vnytros/vnytros/blob/main/CONTRIBUTING.md).
+[CONTRIBUTING.md](https://github.com/Aadesh998/vnytros-domain-connect/blob/main/CONTRIBUTING.md).
 Released under the [MIT License](./LICENSE); the rest of the monorepo is
 AGPL-3.0-only, but this folder is MIT so you can use the SDK in any
 application.

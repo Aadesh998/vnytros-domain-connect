@@ -4,7 +4,7 @@
 
 Please report security issues privately through GitHub's private
 vulnerability reporting:
-<https://github.com/vnytros/vnytros/security/advisories/new>. Do not
+<https://github.com/Aadesh998/vnytros-domain-connect/security/advisories/new>. Do not
 open a public issue or pull request for a vulnerability.
 
 Include what you can of:

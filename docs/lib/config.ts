@@ -20,4 +20,4 @@ export const SITE_URL = (
 ).replace(/\/+$/, "");
 
 /** The project's home: the GitHub monorepo. */
-export const REPO_URL = "https://github.com/vnytros/vnytros";
+export const REPO_URL = "https://github.com/Aadesh998/vnytros-domain-connect";

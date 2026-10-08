@@ -2,7 +2,7 @@
 
 Vnytros is a free, open-source DNS and email-authentication toolkit with a
 built-in mail platform. This folder, `server/` in the
-[Vnytros monorepo](https://github.com/vnytros/vnytros), is the Go backend: the
+[Vnytros monorepo](https://github.com/Aadesh998/vnytros-domain-connect), is the Go backend: the
 REST API, the OAuth server for MCP clients, the MCP server, the mail platform
 (mailforge) and the background worker. Every command below runs from
 `server/`.
@@ -14,7 +14,7 @@ credentials. Nothing in the code points at any project-operated server; every
 URL comes from your configuration and defaults to `localhost`.
 
 There are no plans, tiers or paywalls. Project home:
-<https://github.com/vnytros/vnytros>; documentation:
+<https://github.com/Aadesh998/vnytros-domain-connect>; documentation:
 [`docs/content/docs/`](../docs/content/docs).
 
 ## What it does
@@ -96,8 +96,8 @@ Requirements: Go (see the version in `go.mod`), Docker with Compose, `make`
 and `openssl`.
 
 ```bash
-git clone https://github.com/vnytros/vnytros
-cd vnytros/server
+git clone https://github.com/Aadesh998/vnytros-domain-connect
+cd vnytros-domain-connect/server
 
 # 1. Postgres and RabbitMQ
 docker compose up -d db rabbitmq

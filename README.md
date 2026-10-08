@@ -12,7 +12,7 @@ tracking).
 with your own database, SMTP account and credentials. There are no plans,
 tiers or paywalls.
 
-- Source: <https://github.com/vnytros/vnytros>
+- Source: <https://github.com/Aadesh998/vnytros-domain-connect>
 - Documentation: [`docs/content/docs/`](docs/content/docs) (the source of the
   docs site; run it locally with `cd docs && npm run dev`)
 
@@ -115,8 +115,8 @@ changes in that folder).
 | `make`, `openssl`, `curl` | usually already installed |
 
 ```bash
-git clone https://github.com/vnytros/vnytros
-cd vnytros
+git clone https://github.com/Aadesh998/vnytros-domain-connect
+cd vnytros-domain-connect
 ```
 
 ### 1. Start PostgreSQL and RabbitMQ
@@ -453,7 +453,7 @@ methods below were tested by installing into a fresh project and importing
 **(a) Tarball from `npm pack`** (recommended for apps and CI):
 
 ```bash
-cd vnytros/sdk
+cd vnytros-domain-connect/sdk
 npm ci
 npm pack                         # prepack runs the build; writes vnytros-sdk-0.2.0.tgz
 cd /path/to/your-app
@@ -468,9 +468,9 @@ lines.
 **(b) Local folder** (for developing the SDK and an app side by side):
 
 ```bash
-cd vnytros/sdk && npm ci && npm run build      # dist/ must exist first
+cd vnytros-domain-connect/sdk && npm ci && npm run build      # dist/ must exist first
 cd /path/to/your-app
-npm install file:../path/to/vnytros/sdk
+npm install file:../path/to/vnytros-domain-connect/sdk
 ```
 
 npm symlinks the folder; rebuild the SDK (`npm run build`, or `npm run dev` to
@@ -521,5 +521,5 @@ service, you must offer its source to the users of that service.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and the checks for each
 folder. Report vulnerabilities privately through
-[GitHub security advisories](https://github.com/vnytros/vnytros/security/advisories/new),
+[GitHub security advisories](https://github.com/Aadesh998/vnytros-domain-connect/security/advisories/new),
 as described in [SECURITY.md](SECURITY.md), not in public issues.

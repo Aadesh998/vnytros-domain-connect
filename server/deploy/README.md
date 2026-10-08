@@ -6,8 +6,8 @@ assume Ubuntu). There is no hosted Vnytros service — you bring your own
 domain, server, database, SMTP account and credentials.
 
 This guide lives in the `server/` folder of the
-[Vnytros monorepo](https://github.com/vnytros/vnytros). Every `make` command
-below is run from `server/` on your laptop (`cd vnytros/server`), and paths
+[Vnytros monorepo](https://github.com/Aadesh998/vnytros-domain-connect). Every `make` command
+below is run from `server/` on your laptop (`cd vnytros-domain-connect/server`), and paths
 such as `deploy/` and `.env.example` are relative to it.
 
 Throughout, replace the placeholders:

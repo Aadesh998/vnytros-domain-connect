@@ -50,7 +50,7 @@ const TEMPLATE_FILE_URL =
   "https://github.com/Domain-Connect/Templates/blob/master/vnytros.dev.custom-domain.json";
 
 const SELF_HOST_STEPS = `git clone ${REPO_URL}
-cd vnytros/server
+cd vnytros-domain-connect/server
 cp .env.example .env.production   # set JWT_SECRET, APIKEY_SIGNING_SECRET, WEBHOOK_SIGNING_SECRET
 make keys                         # Domain Connect keypair into keys/
 docker compose up -d db rabbitmq  # PostgreSQL and RabbitMQ
